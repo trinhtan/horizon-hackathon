@@ -8,8 +8,7 @@ import (
 	tmOs "github.com/tendermint/tendermint/libs/os"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/trinhtan/peggy/x/ethbridge"
-	"github.com/trinhtan/peggy/x/oracle"
+	"github.com/trinhtan/horizon-hackathon/x/oracle"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -48,7 +47,6 @@ var (
 		params.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		oracle.AppModuleBasic{},
-		ethbridge.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -56,7 +54,6 @@ var (
 		auth.FeeCollectorName:     nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		ethbridge.ModuleName:      {supply.Burner, supply.Minter},
 	}
 )
 
@@ -88,7 +85,6 @@ type EthereumBridgeApp struct {
 	ParamsKeeper  params.Keeper
 
 	// EthBridge keepers
-	BridgeKeeper ethbridge.Keeper
 	OracleKeeper oracle.Keeper
 
 	// the module manager
@@ -137,7 +133,6 @@ func NewEthereumBridgeApp(
 	app.OracleKeeper = oracle.NewKeeper(app.cdc, keys[oracle.StoreKey],
 		app.StakingKeeper, oracle.DefaultConsensusNeeded,
 	)
-	app.BridgeKeeper = ethbridge.NewKeeper(app.cdc, app.SupplyKeeper, app.OracleKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -148,7 +143,6 @@ func NewEthereumBridgeApp(
 		supply.NewAppModule(app.SupplyKeeper, app.AccountKeeper),
 		staking.NewAppModule(app.StakingKeeper, app.AccountKeeper, app.SupplyKeeper),
 		oracle.NewAppModule(app.OracleKeeper),
-		ethbridge.NewAppModule(app.OracleKeeper, app.SupplyKeeper, app.AccountKeeper, app.BridgeKeeper, app.cdc),
 	)
 
 	app.mm.SetOrderEndBlockers(staking.ModuleName)
@@ -157,7 +151,7 @@ func NewEthereumBridgeApp(
 	// properly initialized with tokens from genesis accounts.
 	app.mm.SetOrderInitGenesis(
 		auth.ModuleName, staking.ModuleName, bank.ModuleName,
-		supply.ModuleName, genutil.ModuleName, ethbridge.ModuleName,
+		supply.ModuleName, genutil.ModuleName,
 	)
 
 	// TODO: add simulator support

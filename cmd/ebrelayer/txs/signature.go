@@ -11,7 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	solsha3 "github.com/miguelmota/go-solidity-sha3"
 
-	"github.com/trinhtan/peggy/cmd/ebrelayer/types"
+	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/types"
 )
 
 // LoadPrivateKey loads the validator's private key from environment variables
@@ -54,9 +54,9 @@ func LoadSender() (address common.Address, err error) {
 }
 
 // GenerateClaimMessage Generates a hashed message containing a ProphecyClaim event's data
-func GenerateClaimMessage(event types.ProphecyClaimEvent) []byte {
+func GenerateClaimMessage(event types.UnlockClaimEvent) []byte {
 	prophecyID := solsha3.Int256(event.ProphecyID)
-	sender := solsha3.String(event.CosmosSender)
+	sender := solsha3.Int256(event.HarmonySender.Hex())
 	recipient := solsha3.Int256(event.EthereumReceiver.Hex())
 	token := solsha3.String(event.TokenAddress.Hex())
 	amount := solsha3.Int256(event.Amount)

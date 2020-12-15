@@ -1,4 +1,4 @@
-module github.com/trinhtan/horizon-hackthon
+module github.com/trinhtan/horizon-hackathon
 
 go 1.13
 

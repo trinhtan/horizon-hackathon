@@ -16,7 +16,7 @@ const (
 var (
 	// BaseABIBINGenCmd is the base command for contract compilation to ABI and BIN
 	BaseABIBINGenCmd = strings.Join([]string{"solc ",
-		fmt.Sprintf("--%s ./testnet-contracts/contracts/%s%s.sol ", SolcCmdText, DirectoryText, ContractText),
+		fmt.Sprintf("--%s ./ethereum-contracts/contracts/%s%s.sol ", SolcCmdText, DirectoryText, ContractText),
 		fmt.Sprintf("-o ./cmd/ebrelayer/contract/generated/%s/%s ", SolcCmdText, ContractText),
 		"--overwrite ",
 		"--allow-paths *,"},

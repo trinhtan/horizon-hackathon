@@ -27,19 +27,19 @@ var (
 )
 
 // BridgeRegistryABI is the input ABI used to generate the binding from.
-const BridgeRegistryABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_cosmosBridge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_bridgeBank\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_oracle\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_valset\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_cosmosBridge\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_bridgeBank\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_oracle\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_valset\",\"type\":\"address\"}],\"name\":\"LogContractsRegistered\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"bridgeBank\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"cosmosBridge\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"oracle\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"valset\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const BridgeRegistryABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_harmonyBridge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_bridgeBank\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_oracle\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_valset\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_harmonyBridge\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_bridgeBank\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_oracle\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_valset\",\"type\":\"address\"}],\"name\":\"LogContractsRegistered\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"bridgeBank\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"harmonyBridge\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"oracle\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"valset\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // BridgeRegistryBin is the compiled bytecode used for deploying new contracts.
-var BridgeRegistryBin = "0x608060405234801561001057600080fd5b506040516105433803806105438339818101604052608081101561003357600080fd5b8101908080519060200190929190805190602001909291908051906020019092919080519060200190929190505050836000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555082600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555081600260006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555080600360006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f039b733f31259b106f1d278c726870d5b28c7db22957d63df8dbaa70bd3a032a6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600260009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600360009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16604051808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200194505050505060405180910390a150505050610245806102fe6000396000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80630e41f373146100515780637dc0d1d01461009b5780637f54af0c146100e5578063b0e9ef711461012f575b600080fd5b610059610179565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100a361019f565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100ed6101c5565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6101376101eb565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600260009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600360009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff168156fea265627a7a7231582044728e09fd493c5f601cc96388645b826d31cb2ede553ee74a413f39d726718664736f6c634300050f0032"
+var BridgeRegistryBin = "0x608060405234801561001057600080fd5b506040516105433803806105438339818101604052608081101561003357600080fd5b8101908080519060200190929190805190602001909291908051906020019092919080519060200190929190505050836000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555082600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555081600260006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555080600360006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f039b733f31259b106f1d278c726870d5b28c7db22957d63df8dbaa70bd3a032a6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600260009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16600360009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16604051808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200194505050505060405180910390a150505050610245806102fe6000396000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80630e41f373146100515780637dc0d1d01461009b5780637f54af0c146100e5578063972ded091461012f575b600080fd5b610059610179565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100a361019f565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100ed6101c5565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6101376101eb565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600260009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600360009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff168156fea265627a7a723158208428cb9f60d6f2dc2f72091597837fd95db2be877a30684b01554d908fe010ae64736f6c63430005110032"
 
 // DeployBridgeRegistry deploys a new Ethereum contract, binding an instance of BridgeRegistry to it.
-func DeployBridgeRegistry(auth *bind.TransactOpts, backend bind.ContractBackend, _cosmosBridge common.Address, _bridgeBank common.Address, _oracle common.Address, _valset common.Address) (common.Address, *types.Transaction, *BridgeRegistry, error) {
+func DeployBridgeRegistry(auth *bind.TransactOpts, backend bind.ContractBackend, _harmonyBridge common.Address, _bridgeBank common.Address, _oracle common.Address, _valset common.Address) (common.Address, *types.Transaction, *BridgeRegistry, error) {
 	parsed, err := abi.JSON(strings.NewReader(BridgeRegistryABI))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
 
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(BridgeRegistryBin), backend, _cosmosBridge, _bridgeBank, _oracle, _valset)
+	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(BridgeRegistryBin), backend, _harmonyBridge, _bridgeBank, _oracle, _valset)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -214,30 +214,30 @@ func (_BridgeRegistry *BridgeRegistryCallerSession) BridgeBank() (common.Address
 	return _BridgeRegistry.Contract.BridgeBank(&_BridgeRegistry.CallOpts)
 }
 
-// CosmosBridge is a free data retrieval call binding the contract method 0xb0e9ef71.
+// HarmonyBridge is a free data retrieval call binding the contract method 0x972ded09.
 //
-// Solidity: function cosmosBridge() view returns(address)
-func (_BridgeRegistry *BridgeRegistryCaller) CosmosBridge(opts *bind.CallOpts) (common.Address, error) {
+// Solidity: function harmonyBridge() view returns(address)
+func (_BridgeRegistry *BridgeRegistryCaller) HarmonyBridge(opts *bind.CallOpts) (common.Address, error) {
 	var (
 		ret0 = new(common.Address)
 	)
 	out := ret0
-	err := _BridgeRegistry.contract.Call(opts, out, "cosmosBridge")
+	err := _BridgeRegistry.contract.Call(opts, out, "harmonyBridge")
 	return *ret0, err
 }
 
-// CosmosBridge is a free data retrieval call binding the contract method 0xb0e9ef71.
+// HarmonyBridge is a free data retrieval call binding the contract method 0x972ded09.
 //
-// Solidity: function cosmosBridge() view returns(address)
-func (_BridgeRegistry *BridgeRegistrySession) CosmosBridge() (common.Address, error) {
-	return _BridgeRegistry.Contract.CosmosBridge(&_BridgeRegistry.CallOpts)
+// Solidity: function harmonyBridge() view returns(address)
+func (_BridgeRegistry *BridgeRegistrySession) HarmonyBridge() (common.Address, error) {
+	return _BridgeRegistry.Contract.HarmonyBridge(&_BridgeRegistry.CallOpts)
 }
 
-// CosmosBridge is a free data retrieval call binding the contract method 0xb0e9ef71.
+// HarmonyBridge is a free data retrieval call binding the contract method 0x972ded09.
 //
-// Solidity: function cosmosBridge() view returns(address)
-func (_BridgeRegistry *BridgeRegistryCallerSession) CosmosBridge() (common.Address, error) {
-	return _BridgeRegistry.Contract.CosmosBridge(&_BridgeRegistry.CallOpts)
+// Solidity: function harmonyBridge() view returns(address)
+func (_BridgeRegistry *BridgeRegistryCallerSession) HarmonyBridge() (common.Address, error) {
+	return _BridgeRegistry.Contract.HarmonyBridge(&_BridgeRegistry.CallOpts)
 }
 
 // Oracle is a free data retrieval call binding the contract method 0x7dc0d1d0.
@@ -361,16 +361,16 @@ func (it *BridgeRegistryLogContractsRegisteredIterator) Close() error {
 
 // BridgeRegistryLogContractsRegistered represents a LogContractsRegistered event raised by the BridgeRegistry contract.
 type BridgeRegistryLogContractsRegistered struct {
-	CosmosBridge common.Address
-	BridgeBank   common.Address
-	Oracle       common.Address
-	Valset       common.Address
-	Raw          types.Log // Blockchain specific contextual infos
+	HarmonyBridge common.Address
+	BridgeBank    common.Address
+	Oracle        common.Address
+	Valset        common.Address
+	Raw           types.Log // Blockchain specific contextual infos
 }
 
 // FilterLogContractsRegistered is a free log retrieval operation binding the contract event 0x039b733f31259b106f1d278c726870d5b28c7db22957d63df8dbaa70bd3a032a.
 //
-// Solidity: event LogContractsRegistered(address _cosmosBridge, address _bridgeBank, address _oracle, address _valset)
+// Solidity: event LogContractsRegistered(address _harmonyBridge, address _bridgeBank, address _oracle, address _valset)
 func (_BridgeRegistry *BridgeRegistryFilterer) FilterLogContractsRegistered(opts *bind.FilterOpts) (*BridgeRegistryLogContractsRegisteredIterator, error) {
 
 	logs, sub, err := _BridgeRegistry.contract.FilterLogs(opts, "LogContractsRegistered")
@@ -382,7 +382,7 @@ func (_BridgeRegistry *BridgeRegistryFilterer) FilterLogContractsRegistered(opts
 
 // WatchLogContractsRegistered is a free log subscription operation binding the contract event 0x039b733f31259b106f1d278c726870d5b28c7db22957d63df8dbaa70bd3a032a.
 //
-// Solidity: event LogContractsRegistered(address _cosmosBridge, address _bridgeBank, address _oracle, address _valset)
+// Solidity: event LogContractsRegistered(address _harmonyBridge, address _bridgeBank, address _oracle, address _valset)
 func (_BridgeRegistry *BridgeRegistryFilterer) WatchLogContractsRegistered(opts *bind.WatchOpts, sink chan<- *BridgeRegistryLogContractsRegistered) (event.Subscription, error) {
 
 	logs, sub, err := _BridgeRegistry.contract.WatchLogs(opts, "LogContractsRegistered")
@@ -419,7 +419,7 @@ func (_BridgeRegistry *BridgeRegistryFilterer) WatchLogContractsRegistered(opts 
 
 // ParseLogContractsRegistered is a log parse operation binding the contract event 0x039b733f31259b106f1d278c726870d5b28c7db22957d63df8dbaa70bd3a032a.
 //
-// Solidity: event LogContractsRegistered(address _cosmosBridge, address _bridgeBank, address _oracle, address _valset)
+// Solidity: event LogContractsRegistered(address _harmonyBridge, address _bridgeBank, address _oracle, address _valset)
 func (_BridgeRegistry *BridgeRegistryFilterer) ParseLogContractsRegistered(log types.Log) (*BridgeRegistryLogContractsRegistered, error) {
 	event := new(BridgeRegistryLogContractsRegistered)
 	if err := _BridgeRegistry.contract.UnpackLog(event, "LogContractsRegistered", log); err != nil {

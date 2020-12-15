@@ -5,8 +5,6 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-
-	ethbridge "github.com/trinhtan/peggy/x/ethbridge/types"
 )
 
 // Event enum containing supported chain events
@@ -21,72 +19,65 @@ const (
 	MsgLock
 	// LogLock is for Ethereum event LogLock
 	LogLock
-	// LogBurn is for Ethereum event LogBurn
-	LogBurn
-	// LogNewProphecyClaim is an Ethereum event named 'LogNewProphecyClaim'
-	LogNewProphecyClaim
+	// LogNewUnlockClaim is an Ethereum event named 'LogNewProphecyClaim'
+	LogNewUnlockClaim
 )
 
 // String returns the event type as a string
 func (d Event) String() string {
-	return [...]string{"unsupported", "burn", "lock", "LogLock", "LogBurn", "LogNewProphecyClaim"}[d]
+	return [...]string{"unsupported", "burn", "lock", "LogLock", "LogNewProphecyClaim", "LogNewUnlockClaim"}[d]
 }
 
-// EthereumEvent struct is used by LogLock and LogBurn
+// EthereumEvent struct is used by LogLock
 type EthereumEvent struct {
 	EthereumChainID       *big.Int
 	BridgeContractAddress common.Address
 	ID                    [32]byte
-	From                  common.Address
-	To                    []byte
-	Token                 common.Address
-	Symbol                string
+	EthereumSender        common.Address
+	HarmonyReceiver       common.Address
+	EthereumToken         common.Address
+	HarmonyToken          common.Address
 	Value                 *big.Int
 	Nonce                 *big.Int
-	ClaimType             ethbridge.ClaimType
 }
 
 // String implements fmt.Stringer
 func (e EthereumEvent) String() string {
-	return fmt.Sprintf("\nChain ID: %v\nBridge contract address: %v\nToken symbol: %v\nToken "+
-		"contract address: %v\nSender: %v\nRecipient: %v\nValue: %v\nNonce: %v\nClaim type: %v",
-		e.EthereumChainID, e.BridgeContractAddress.Hex(), e.Symbol, e.Token.Hex(), e.From.Hex(),
-		string(e.To), e.Value, e.Nonce, e.ClaimType.String())
+	return fmt.Sprintf("\nChain ID: %v\nBridge contract address: %v\nEthereum Token: %v\nHarmony Token "+
+		"contract address: %v\nSender: %v\nRecipient: %v\nValue: %v\nNonce: %v",
+		e.EthereumChainID, e.BridgeContractAddress.Hex(), e.EthereumToken.Hex(), e.HarmonyToken.Hex(), e.EthereumSender.Hex(),
+		e.HarmonyReceiver.Hex(), e.Value, e.Nonce)
 }
 
-// ProphecyClaimEvent struct which represents a LogNewProphecyClaim event
-type ProphecyClaimEvent struct {
-	CosmosSender     []byte
-	Symbol           string
+// UnlockClaimEvent struct which represents a LogNewUnlockClaim event
+type UnlockClaimEvent struct {
+	HarmonySender    common.Address
 	ProphecyID       *big.Int
 	Amount           *big.Int
 	EthereumReceiver common.Address
 	ValidatorAddress common.Address
 	TokenAddress     common.Address
-	ClaimType        uint8
 }
 
-// NewProphecyClaimEvent creates a new ProphecyClaimEvent
-func NewProphecyClaimEvent(cosmosSender []byte, symbol string, prophecyID, amount *big.Int, ethereumReceiver,
-	validatorAddress, tokenAddress common.Address, claimType uint8) ProphecyClaimEvent {
-	return ProphecyClaimEvent{
-		CosmosSender:     cosmosSender,
-		Symbol:           symbol,
+// NewUnlockClaimEvent creates a new UnlockClaimEvent
+func NewUnlockClaimEvent(harmonySender common.Address, prophecyID, amount *big.Int, ethereumReceiver,
+	validatorAddress, tokenAddress common.Address, claimType uint8) UnlockClaimEvent {
+	return UnlockClaimEvent{
+		HarmonySender:    harmonySender,
 		ProphecyID:       prophecyID,
 		Amount:           amount,
 		EthereumReceiver: ethereumReceiver,
 		ValidatorAddress: validatorAddress,
 		TokenAddress:     tokenAddress,
-		ClaimType:        claimType,
 	}
 }
 
 // String implements fmt.Stringer
-func (p ProphecyClaimEvent) String() string {
-	return fmt.Sprintf("\nProphecy ID: %v\nClaim Type: %v\nSender: %v\n"+
-		"Recipient: %v\nSymbol: %v\nToken: %v\nAmount: %v\nValidator: %v\n\n",
-		p.ProphecyID, p.ClaimType, string(p.CosmosSender), p.EthereumReceiver.Hex(),
-		p.Symbol, p.TokenAddress.Hex(), p.Amount, p.ValidatorAddress.Hex())
+func (p UnlockClaimEvent) String() string {
+	return fmt.Sprintf("\nProphecy ID: %v\nHarmony Sender: %v\n"+
+		"Recipient: %v\nEthereum Token: %v\nAmount: %v\nValidator: %v\n\n",
+		p.ProphecyID, p.HarmonySender.Hex(), p.EthereumReceiver.Hex(),
+		p.TokenAddress.Hex(), p.Amount, p.ValidatorAddress.Hex())
 }
 
 // CosmosMsg contains data from MsgBurn and MsgLock events

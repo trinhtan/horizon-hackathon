@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/trinhtan/peggy/x/oracle/types"
+	"github.com/trinhtan/horizon-hackathon/x/oracle/types"
 	"github.com/stretchr/testify/require"
 )
 

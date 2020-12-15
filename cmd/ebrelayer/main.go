@@ -79,11 +79,19 @@ var rootCmd = &cobra.Command{
 //	initRelayerCmd
 func initRelayerCmd() *cobra.Command {
 	//nolint:lll
+	// initRelayerCmd := &cobra.Command{
+	// 	Use:     "init [tendermintNode] [web3Provider] [bridgeRegistryContractAddress] [validatorMoniker]",
+	// 	Short:   "Validate credentials and initialize subscriptions to both chains",
+	// 	Args:    cobra.ExactArgs(4),
+	// 	Example: "ebrelayer init tcp://localhost:26657 ws://localhost:7545/ 0x30753E4A8aad7F8597332E813735Def5dD395028 validator --chain-id=peggy",
+	// 	RunE:    RunInitRelayerCmd,
+	// }
+
 	initRelayerCmd := &cobra.Command{
-		Use:     "init [tendermintNode] [web3Provider] [bridgeRegistryContractAddress] [validatorMoniker]",
+		Use:     "init [web3Provider] [bridgeRegistryContractAddress] [validatorMoniker]",
 		Short:   "Validate credentials and initialize subscriptions to both chains",
-		Args:    cobra.ExactArgs(4),
-		Example: "ebrelayer init tcp://localhost:26657 ws://localhost:7545/ 0x30753E4A8aad7F8597332E813735Def5dD395028 validator --chain-id=peggy",
+		Args:    cobra.ExactArgs(3),
+		Example: "ebrelayer ws://localhost:7545/ 0x30753E4A8aad7F8597332E813735Def5dD395028 validator --chain-id=peggy",
 		RunE:    RunInitRelayerCmd,
 	}
 
@@ -126,26 +134,20 @@ func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Validate and parse arguments
-	if len(strings.Trim(args[0], "")) == 0 {
-		return errors.Errorf("invalid [tendermint-node]: %s", args[0])
-	}
-	tendermintNode := args[0]
-
-	if !relayer.IsWebsocketURL(args[1]) {
+	if !relayer.IsWebsocketURL(args[0]) {
 		return errors.Errorf("invalid [web3-provider]: %s", args[1])
 	}
-	web3Provider := args[1]
+	web3Provider := args[0]
 
-	if !common.IsHexAddress(args[2]) {
-		return errors.Errorf("invalid [bridge-registry-contract-address]: %s", args[2])
+	if !common.IsHexAddress(args[1]) {
+		return errors.Errorf("invalid [bridge-registry-contract-address]: %s", args[1])
 	}
-	contractAddress := common.HexToAddress(args[2])
+	contractAddress := common.HexToAddress(args[1])
 
-	if len(strings.Trim(args[3], "")) == 0 {
-		return errors.Errorf("invalid [validator-moniker]: %s", args[3])
+	if len(strings.Trim(args[2], "")) == 0 {
+		return errors.Errorf("invalid [validator-moniker]: %s", args[2])
 	}
-	validatorMoniker := args[3]
+	validatorMoniker := args[2]
 
 	// Universal logger
 	logger := tmLog.NewTMLogger(tmLog.NewSyncWriter(os.Stdout))
@@ -157,11 +159,12 @@ func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	// Initialize new Cosmos event listener
-	cosmosSub := relayer.NewCosmosSub(tendermintNode, web3Provider, contractAddress, privateKey, logger)
+
+	// // Initialize new Cosmos event listener
+	// cosmosSub := relayer.NewCosmosSub(tendermintNode, web3Provider, contractAddress, privateKey, logger)
 
 	go ethSub.Start()
-	go cosmosSub.Start()
+	// go cosmosSub.Start()
 
 	// Exit signal enables graceful shutdown
 	exitSignal := make(chan os.Signal, 1)
