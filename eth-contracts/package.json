@@ -1,5 +1,5 @@
 {
-  "name": "testnet-contracts",
+  "name": "eth-contracts",
   "version": "1.1.0",
   "description": "Dependencies and scripts for Peggy smart contracts",
   "main": "truffle.js",
