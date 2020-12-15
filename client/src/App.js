@@ -1,14 +1,14 @@
 import logo from './logo.svg';
 import './App.css';
-import { useEffect } from 'react';
+// import { useEffect } from 'react';
 // import { connectOneWallet } from './utils/connectOneWallet';
 // import { connectMetamask } from './utils/connectMetamask';
 
 function App() {
-  useEffect(() => {
-    // connectOneWallet();
-    // connectMetamask();
-  });
+  // useEffect(() => {
+  //   connectOneWallet();
+  //   connectMetamask();
+  // });
 
   return (
     <div className='App'>
