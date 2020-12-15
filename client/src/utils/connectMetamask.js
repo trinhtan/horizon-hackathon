@@ -4,8 +4,8 @@
 
 import detectEthereumProvider from '@metamask/detect-provider';
 import Web3 from 'web3';
-// import store from 'store';
-// import { setSender, setReceiver, setWeb3 } from 'store/actions.js';
+import store from 'store';
+import { setAddress } from 'store/eth/action.js';
 // import { notification } from 'antd';
 
 // const openNotification = (message, description) => {
@@ -84,10 +84,10 @@ export const connectMetamask = async isSender => {
   async function handleAccountsChanged(accounts) {
     if (accounts.length === 0) {
       // MetaMask is locked or the user has not connected any accounts
-
       console.log('Please connect to MetaMask.');
     } else if (accounts[0] !== currentAccount) {
       currentAccount = accounts[0];
+      store.dispatch(setAddress(currentAccount));
       console.log('Connect ' + currentAccount);
       // Do any other work!
     }
