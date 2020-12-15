@@ -7,7 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/trinhtan/peggy/x/oracle/types"
+	"github.com/trinhtan/horizon-hackathon/x/oracle/types"
 )
 
 // Keeper maintains the link to data storage and

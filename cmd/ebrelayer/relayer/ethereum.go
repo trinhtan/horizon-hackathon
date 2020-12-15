@@ -24,10 +24,9 @@ import (
 	amino "github.com/tendermint/go-amino"
 	tmLog "github.com/tendermint/tendermint/libs/log"
 
-	"github.com/trinhtan/peggy/cmd/ebrelayer/contract"
-	"github.com/trinhtan/peggy/cmd/ebrelayer/txs"
-	"github.com/trinhtan/peggy/cmd/ebrelayer/types"
-	ethbridge "github.com/trinhtan/peggy/x/ethbridge/types"
+	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract"
+	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/txs"
+	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/types"
 )
 
 // TODO: Move relay functionality out of EthereumSub into a new Relayer parent struct
@@ -137,34 +136,31 @@ func (sub EthereumSub) Start() {
 	bridgeBankAddress, subBridgeBank := sub.startContractEventSub(logs, client, txs.BridgeBank)
 	bridgeBankContractABI := contract.LoadABI(txs.BridgeBank)
 	eventLogLockSignature := bridgeBankContractABI.Events[types.LogLock.String()].Id().Hex()
-	eventLogBurnSignature := bridgeBankContractABI.Events[types.LogBurn.String()].Id().Hex()
+	// eventLogBurnSignature := bridgeBankContractABI.Events[types.LogBurn.String()].Id().Hex()
 
-	// Start CosmosBridge subscription, prepare contract ABI and LogNewProphecyClaim event signature
-	cosmosBridgeAddress, subCosmosBridge := sub.startContractEventSub(logs, client, txs.CosmosBridge)
-	cosmosBridgeContractABI := contract.LoadABI(txs.CosmosBridge)
-	eventLogNewProphecyClaimSignature := cosmosBridgeContractABI.Events[types.LogNewProphecyClaim.String()].Id().Hex()
+	// Start harmonyBridge subscription, prepare contract ABI and LogNewProphecyClaim event signature
+	harmonyBridgeAddress, subHarmonyBridge := sub.startContractEventSub(logs, client, txs.HarmonyBridge)
+	harmonyBridgeContractABI := contract.LoadABI(txs.HarmonyBridge)
+	eventLogNewProphecyClaimSignature := harmonyBridgeContractABI.Events[types.LogNewUnlockClaim.String()].Id().Hex()
 
 	for {
 		select {
 		// Handle any errors
 		case err := <-subBridgeBank.Err():
 			sub.Logger.Error(err.Error())
-		case err := <-subCosmosBridge.Err():
+		case err := <-subHarmonyBridge.Err():
 			sub.Logger.Error(err.Error())
 		// vLog is raw event data
 		case vLog := <-logs:
 			sub.Logger.Info(fmt.Sprintf("Witnessed tx %s on block %d\n", vLog.TxHash.Hex(), vLog.BlockNumber))
 			var err error
 			switch vLog.Topics[0].Hex() {
-			case eventLogBurnSignature:
-				err = sub.handleEthereumEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI,
-					types.LogBurn.String(), vLog)
 			case eventLogLockSignature:
 				err = sub.handleEthereumEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI,
 					types.LogLock.String(), vLog)
 			case eventLogNewProphecyClaimSignature:
-				err = sub.handleLogNewProphecyClaim(cosmosBridgeAddress, cosmosBridgeContractABI,
-					types.LogNewProphecyClaim.String(), vLog)
+				err = sub.handleLogNewUnlockClaim(harmonyBridgeAddress, harmonyBridgeContractABI,
+					types.LogNewUnlockClaim.String(), vLog)
 			}
 			// TODO: Check local events store for status, if retryable, attempt relay again
 			if err != nil {
@@ -174,7 +170,7 @@ func (sub EthereumSub) Start() {
 	}
 }
 
-// startContractEventSub : starts an event subscription on the specified Peggy contract
+// startContractEventSub : starts an event subscription on the specified Ethereum contract
 func (sub EthereumSub) startContractEventSub(logs chan ctypes.Log, client *ethclient.Client,
 	contractName txs.ContractRegistry) (common.Address, ethereum.Subscription) {
 	// Get the contract address for this subscription
@@ -208,38 +204,43 @@ func (sub EthereumSub) handleEthereumEvent(clientChainID *big.Int, contractAddre
 	}
 	event.BridgeContractAddress = contractAddress
 	event.EthereumChainID = clientChainID
-	if eventName == types.LogBurn.String() {
-		event.ClaimType = ethbridge.BurnText
-	} else {
-		event.ClaimType = ethbridge.LockText
-	}
+
+	// if eventName == types.LogBurn.String() {
+	// 	event.ClaimType = ethbridge.BurnText
+	// } else {
+	// 	event.ClaimType = ethbridge.LockText
+	// }
 	sub.Logger.Info(event.String())
 
 	// Add the event to the record
 	types.NewEventWrite(cLog.TxHash.Hex(), event)
 
-	prophecyClaim, err := txs.EthereumEventToEthBridgeClaim(sub.ValidatorAddress, &event)
-	if err != nil {
-		return err
-	}
-	return txs.RelayToCosmos(sub.Cdc, sub.ValidatorName, &prophecyClaim, sub.CliCtx, sub.TxBldr)
+	// prophecyClaim, err := txs.EthereumEventToEthBridgeClaim(sub.ValidatorAddress, &event)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(prophecyClaim)
+
+	return nil
+	// return txs.RelayToCosmos(sub.Cdc, sub.ValidatorName, &prophecyClaim, sub.CliCtx, sub.TxBldr)
 }
 
 // Unpacks a handleLogNewProphecyClaim event, builds a new OracleClaim, and relays it to Ethereum
-func (sub EthereumSub) handleLogNewProphecyClaim(contractAddress common.Address, contractABI abi.ABI,
+func (sub EthereumSub) handleLogNewUnlockClaim(contractAddress common.Address, contractABI abi.ABI,
 	eventName string, cLog ctypes.Log) error {
-	// Parse the event's attributes via contract ABI
-	event := types.ProphecyClaimEvent{}
-	err := contractABI.Unpack(&event, eventName, cLog.Data)
-	if err != nil {
-		sub.Logger.Error("error unpacking: %v", err)
-	}
-	sub.Logger.Info(event.String())
+	// // Parse the event's attributes via contract ABI
+	// event := types.ProphecyClaimEvent{}
+	// err := contractABI.Unpack(&event, eventName, cLog.Data)
+	// if err != nil {
+	// 	sub.Logger.Error("error unpacking: %v", err)
+	// }
+	// sub.Logger.Info(event.String())
 
-	oracleClaim, err := txs.ProphecyClaimToSignedOracleClaim(event, sub.PrivateKey)
-	if err != nil {
-		return err
-	}
-	return txs.RelayOracleClaimToEthereum(sub.EthProvider, contractAddress, types.LogNewProphecyClaim,
-		oracleClaim, sub.PrivateKey)
+	// oracleClaim, err := txs.ProphecyClaimToSignedOracleClaim(event, sub.PrivateKey)
+	// if err != nil {
+	// 	return err
+	// }
+	// return txs.RelayOracleClaimToEthereum(sub.EthProvider, contractAddress, types.LogNewProphecyClaim,
+	// 	oracleClaim, sub.PrivateKey)
+	return nil
 }

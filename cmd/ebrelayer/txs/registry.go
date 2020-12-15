@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	bridgeregistry "github.com/trinhtan/peggy/cmd/ebrelayer/contract/generated/bindings/bridgeregistry"
+	bridgeregistry "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/bindings/bridgeregistry"
 )
 
 // TODO: Update BridgeRegistry contract so that all bridge contract addresses can be queried
@@ -25,13 +25,13 @@ const (
 	Oracle
 	// BridgeBank bridgeBank contract
 	BridgeBank
-	// CosmosBridge cosmosBridge contract
-	CosmosBridge
+	// HarmonyBridge cosmosBridge contract
+	HarmonyBridge
 )
 
 // String returns the event type as a string
 func (d ContractRegistry) String() string {
-	return [...]string{"valset", "oracle", "bridgebank", "cosmosbridge"}[d-1]
+	return [...]string{"valset", "oracle", "bridgebank", "harmonybridge"}[d-1]
 }
 
 // GetAddressFromBridgeRegistry queries the requested contract address from the BridgeRegistry contract
@@ -69,8 +69,8 @@ func GetAddressFromBridgeRegistry(client *ethclient.Client, registry common.Addr
 		address, err = registryInstance.Oracle(&auth)
 	case BridgeBank:
 		address, err = registryInstance.BridgeBank(&auth)
-	case CosmosBridge:
-		address, err = registryInstance.CosmosBridge(&auth)
+	case HarmonyBridge:
+		address, err = registryInstance.HarmonyBridge(&auth)
 	default:
 		panic("invalid target contract address")
 	}

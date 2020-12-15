@@ -11,9 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	cosmosbridge "github.com/trinhtan/peggy/cmd/ebrelayer/contract/generated/bindings/cosmosbridge"
-	oracle "github.com/trinhtan/peggy/cmd/ebrelayer/contract/generated/bindings/oracle"
-	"github.com/trinhtan/peggy/cmd/ebrelayer/types"
+	harmonybridge "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/bindings/harmonybridge"
+	oracle "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/bindings/oracle"
+	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/types"
 )
 
 const (
@@ -21,23 +21,25 @@ const (
 	GasLimit = uint64(3000000)
 )
 
-// RelayProphecyClaimToEthereum relays the provided ProphecyClaim to CosmosBridge contract on the Ethereum network
+// RelayProphecyClaimToEthereum relays the provided ProphecyClaim to HarmonyBridge contract on the Ethereum network
 func RelayProphecyClaimToEthereum(provider string, contractAddress common.Address, event types.Event,
 	claim ProphecyClaim, key *ecdsa.PrivateKey) error {
 	// Initialize client service, validator's tx auth, and target contract address
 	client, auth, target := initRelayConfig(provider, contractAddress, event, key)
 
-	// Initialize CosmosBridge instance
-	fmt.Println("\nFetching CosmosBridge contract...")
-	cosmosBridgeInstance, err := cosmosbridge.NewCosmosBridge(target, client)
+	// Initialize HarmonyBridge instance
+	fmt.Println("\nFetching HarmonyBridge contract...")
+	harmonyBridgeInstance, err := harmonybridge.NewHarmonyBridge(target, client)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Send transaction
-	fmt.Println("Sending new ProphecyClaim to CosmosBridge...")
-	tx, err := cosmosBridgeInstance.NewProphecyClaim(auth, uint8(claim.ClaimType),
-	claim.CosmosSender, claim.EthereumReceiver, claim.Symbol, claim.Amount)
+	fmt.Println("Sending new ProphecyClaim to HarmonyBridge...")
+	// tx, err := harmonyBridgeInstance.NewUnlockClaim(auth,
+	// 	claim.CosmosSender, claim.EthereumReceiver, claim.Symbol, claim.Amount)
+	tx, err := harmonyBridgeInstance.NewUnlockClaim(auth,
+		claim.EthereumReceiver, claim.EthereumReceiver, claim.EthereumReceiver, claim.Amount)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,11 +131,11 @@ func initRelayConfig(provider string, registry common.Address, event types.Event
 
 	var targetContract ContractRegistry
 	switch event {
-	// ProphecyClaims are sent to the CosmosBridge contract
+	// ProphecyClaims are sent to the HarmonyBridge contract
 	case types.MsgBurn, types.MsgLock:
-		targetContract = CosmosBridge
+		targetContract = HarmonyBridge
 	// OracleClaims are sent to the Oracle contract
-	case types.LogNewProphecyClaim:
+	case types.LogNewUnlockClaim:
 		targetContract = Oracle
 	default:
 		panic("invalid target contract address")

@@ -11,14 +11,14 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/trinhtan/peggy/cmd/ebrelayer/txs"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/txs"
 )
 
-// File paths to Peggy smart contract ABIs
+// File paths to Ethereum smart contract ABIs
 const (
-	BridgeBankABI   = "/generated/abi/BridgeBank/BridgeBank.abi"
-	CosmosBridgeABI = "/generated/abi/CosmosBridge/CosmosBridge.abi"
+	BridgeBankABI    = "/generated/abi/BridgeBank/BridgeBank.abi"
+	HarmonyBridgeABI = "/generated/abi/HarmonyBridge/HarmonyBridge.abi"
 )
 
 // LoadABI loads a smart contract as an abi.ABI
@@ -30,8 +30,8 @@ func LoadABI(contractType txs.ContractRegistry) abi.ABI {
 
 	var filePath string
 	switch contractType {
-	case txs.CosmosBridge:
-		filePath = CosmosBridgeABI
+	case txs.HarmonyBridge:
+		filePath = HarmonyBridgeABI
 	case txs.BridgeBank:
 		filePath = BridgeBankABI
 	}

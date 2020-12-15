@@ -10,14 +10,14 @@ const (
 	Valset
 	// Oracle enables validators to make OracleClaims and processes ProphecyClaims
 	Oracle
-	// CosmosBridge enables validators to make ProphecyClaims
-	CosmosBridge
-	// BridgeBank manages protocol assets on both Ethereum and Cosmos
+	// HarmonyBridge enables validators to make ProphecyClaims
+	HarmonyBridge
+	// BridgeBank manages protocol assets on both Ethereum and Harmony
 	BridgeBank
 )
 
 // BridgeContractToString returns the string associated with a BridgeContract
-var BridgeContractToString = [...]string{"BridgeRegistry", "Valset", "Oracle", "CosmosBridge", "BridgeBank"}
+var BridgeContractToString = [...]string{"BridgeRegistry", "Valset", "Oracle", "HarmonyBridge", "BridgeBank"}
 
 // String returns the BridgeContract as a string
 func (d BridgeContract) String() string {
@@ -33,7 +33,7 @@ func LoadBridgeContracts() BridgeContracts {
 		BridgeRegistry,
 		Valset,
 		Oracle,
-		CosmosBridge,
+		HarmonyBridge,
 		BridgeBank,
 	}
 }

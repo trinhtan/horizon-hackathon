@@ -39,8 +39,8 @@ clean:
 	rm -f ebrelayer
 
 install:
-	go install -mod=readonly ./cmd/ebd
-	go install -mod=readonly ./cmd/ebcli
+	# go install -mod=readonly ./cmd/ebd
+	# go install -mod=readonly ./cmd/ebcli
 	go install -mod=readonly ./cmd/ebrelayer
 
 # lint:
