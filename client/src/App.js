@@ -1,8 +1,13 @@
-import logo from './logo.svg';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import './App.css';
 // import { useEffect } from 'react';
 // import { connectOneWallet } from './utils/connectOneWallet';
 // import { connectMetamask } from './utils/connectMetamask';
+
+import { Layout } from 'antd';
+
+import Head from 'components/Head';
+import SwapPage from 'pages/SwapPage';
 
 function App() {
   // useEffect(() => {
@@ -11,22 +16,15 @@ function App() {
   // });
 
   return (
-    <div className='App'>
-      <header className='App-header'>
-        <img src={logo} className='App-logo' alt='logo' />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className='App-link'
-          href='https://reactjs.org'
-          target='_blank'
-          rel='noopener noreferrer'
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Layout className='App'>
+        <Head />
+        <Switch>
+          <Route exact path='/' component={SwapPage} />
+        </Switch>
+        {/* <FooterPage /> */}
+      </Layout>
+    </Router>
   );
 }
 
