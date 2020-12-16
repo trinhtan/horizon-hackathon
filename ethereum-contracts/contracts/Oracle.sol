@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./Valset.sol";
 import "./HarmonyBridge.sol";
 
@@ -93,8 +93,8 @@ contract Oracle {
         );
 
         (
-            // bool valid,
             ,
+            // bool valid,
             uint256 unlockPowerCurrent,
             uint256 unlockPowerThreshold
         ) = getUnlockThreshold(_unlockID);
@@ -117,8 +117,8 @@ contract Oracle {
         isPending(_unlockID)
     {
         (
-            // bool valid,
             ,
+            // bool valid,
             uint256 unlockPowerCurrent,
             uint256 unlockPowerThreshold
         ) = getUnlockThreshold(_unlockID);
@@ -131,12 +131,12 @@ contract Oracle {
         // Update the BridgeClaim's status
         completeUnlock(_unlockID);
 
-        emit LogUnlockProcessed(
-            _unlockID,
-            unlockPowerCurrent,
-            unlockPowerThreshold,
-            msg.sender
-        );
+        // emit LogProphecyProcessed(
+        //     _unlockID,
+        //     unlockPowerCurrent,
+        //     unlockPowerThreshold,
+        //     msg.sender
+        // );
     }
 
     function checkBridgeUnlock(uint256 _unlockID)
@@ -186,14 +186,9 @@ contract Oracle {
         uint256 unlockPowerThreshold = totalPower.mul(consensusThreshold);
         // consensusThreshold is a decimal multiplied by 100, so signedPower must also be multiplied by 100
         uint256 unlockPowerCurrent = signedPower.mul(100);
-        bool hasReachedThreshold = unlockPowerCurrent >=
-            unlockPowerThreshold;
+        bool hasReachedThreshold = unlockPowerCurrent >= unlockPowerThreshold;
 
-        return (
-            hasReachedThreshold,
-            unlockPowerCurrent,
-            unlockPowerThreshold
-        );
+        return (hasReachedThreshold, unlockPowerCurrent, unlockPowerThreshold);
     }
 
     function completeUnlock(uint256 _unlockID) internal {

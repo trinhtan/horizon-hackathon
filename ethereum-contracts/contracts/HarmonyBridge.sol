@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./Valset.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./BridgeBank/BridgeBank.sol";
-import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 contract HarmonyBridge {
     using SafeMath for uint256;
@@ -46,10 +46,7 @@ contract HarmonyBridge {
     event LogUnlockCompleted(uint256 _unlockID);
 
     modifier isPending(uint256 _unlockID) {
-        require(
-            isUnlockClaimActive(_unlockID),
-            "Unlock claim is not active"
-        );
+        require(isUnlockClaimActive(_unlockID), "Unlock claim is not active");
         _;
     }
 
@@ -104,14 +101,14 @@ contract HarmonyBridge {
         address _token,
         uint256 _amount
     ) public isActive {
-
         require(
             valset.isActiveValidator(msg.sender),
             "Must be an active validator"
         );
         require(bridgeBank.isAcceptedToken(_token) == true, "Invalid Token");
-        require(bridgeBank.getLockedFunds(_token) >= _amount,
-                "Not enough locked assets to complete the proposed prophecy"
+        require(
+            bridgeBank.getLockedFunds(_token) >= _amount,
+            "Not enough locked assets to complete the proposed prophecy"
         );
 
         // Create the new ProphecyClaim
@@ -164,11 +161,7 @@ contract HarmonyBridge {
         );
     }
 
-    function isUnlockClaimActive(uint256 _unlockID)
-        public
-        view
-        returns (bool)
-    {
+    function isUnlockClaimActive(uint256 _unlockID) public view returns (bool) {
         return unlockClaims[_unlockID].status == Status.Pending;
     }
 
@@ -178,8 +171,6 @@ contract HarmonyBridge {
         returns (bool)
     {
         return
-            valset.isActiveValidator(
-                unlockClaims[_unlockID].originalValidator
-            );
+            valset.isActiveValidator(unlockClaims[_unlockID].originalValidator);
     }
 }

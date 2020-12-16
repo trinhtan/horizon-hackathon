@@ -1,8 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../../node_modules/openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "../../node_modules/openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
+import "../ILendingPool.sol";
 
 /*
  *  @title: EthereumBank
@@ -31,11 +32,7 @@ contract EthereumBank {
         uint256 _nonce
     );
 
-    event LogUnlock(
-        address _to,
-        address _token,
-        uint256 _value
-    );
+    event LogUnlock(address _to, address _token, uint256 _value);
 
     /*
      * @dev: Modifier declarations
@@ -55,7 +52,9 @@ contract EthereumBank {
         ONEAddress = address(0x2222222222222222222222222222222222222222);
     }
 
-    function addTokenInternal(address _ethereumToken, address _harmonyToken) internal {
+    function addTokenInternal(address _ethereumToken, address _harmonyToken)
+        internal
+    {
         tokenPairMaps[_ethereumToken] = _harmonyToken;
         string memory symbol = ERC20Detailed(_ethereumToken).symbol();
         symbolToToken[symbol] = _ethereumToken;
@@ -67,11 +66,7 @@ contract EthereumBank {
         symbolToToken[symbol] = address(0);
     }
 
-    function isAcceptedToken(address _token)
-        public
-        view
-        returns (bool)
-    {
+    function isAcceptedToken(address _token) public view returns (bool) {
         return tokenPairMaps[_token] != address(0);
     }
 
@@ -88,11 +83,7 @@ contract EthereumBank {
      *
      * @param _symbol: The asset's symbol.
      */
-    function getLockedFunds(address _token)
-        public
-        view
-        returns (uint256)
-    {
+    function getLockedFunds(address _token) public view returns (uint256) {
         return lockedFunds[_token];
     }
 
@@ -112,9 +103,19 @@ contract EthereumBank {
     ) internal {
         lockNonce = lockNonce.add(1);
         address _harmonyToken = tokenPairMaps[_ethereumToken];
-        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(_amountEthereumToken);
+        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
+            _amountEthereumToken
+        );
 
-        emit LogLock(_ethereumSender, _harmonyReceiver, _ethereumToken, _harmonyToken, _amountEthereumToken, _amountEthereumToken, lockNonce);
+        emit LogLock(
+            _ethereumSender,
+            _harmonyReceiver,
+            _ethereumToken,
+            _harmonyToken,
+            _amountEthereumToken,
+            _amountEthereumToken,
+            lockNonce
+        );
     }
 
     function lockAndSwapETHForONE(
@@ -126,7 +127,15 @@ contract EthereumBank {
         lockNonce = lockNonce.add(1);
         lockedFunds[ETHAddress] = lockedFunds[ETHAddress].add(_amountETH);
 
-        emit LogLock(_ethereumSender, _harmonyReceiver, ETHAddress, ONEAddress, _amountETH, _amountONE, lockNonce);
+        emit LogLock(
+            _ethereumSender,
+            _harmonyReceiver,
+            ETHAddress,
+            ONEAddress,
+            _amountETH,
+            _amountONE,
+            lockNonce
+        );
     }
 
     function lockAndSwapETHForToken(
@@ -141,7 +150,15 @@ contract EthereumBank {
 
         address harmonyToken = tokenPairMaps[symbolToToken[_destTokenSymbol]];
 
-        emit LogLock(_ethereumSender, _harmonyReceiver, ETHAddress, harmonyToken, _amountETH, _amountDestToken, lockNonce);
+        emit LogLock(
+            _ethereumSender,
+            _harmonyReceiver,
+            ETHAddress,
+            harmonyToken,
+            _amountETH,
+            _amountDestToken,
+            lockNonce
+        );
     }
 
     function lockAndSwapTokenForToken(
@@ -153,11 +170,21 @@ contract EthereumBank {
         uint256 _amountDestToken
     ) internal {
         lockNonce = lockNonce.add(1);
-        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(_amountEthereumToken);
+        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
+            _amountEthereumToken
+        );
 
         address harmonyToken = tokenPairMaps[symbolToToken[_destTokenSymbol]];
 
-        emit LogLock(_ethereumSender, _harmonyReceiver, _ethereumToken, harmonyToken, _amountEthereumToken, _amountDestToken, lockNonce);
+        emit LogLock(
+            _ethereumSender,
+            _harmonyReceiver,
+            _ethereumToken,
+            harmonyToken,
+            _amountEthereumToken,
+            _amountDestToken,
+            lockNonce
+        );
     }
 
     function lockAndSwapTokenForONE(
@@ -168,9 +195,19 @@ contract EthereumBank {
         uint256 _amountONE
     ) internal {
         lockNonce = lockNonce.add(1);
-        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(_amountEthereumToken);
+        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
+            _amountEthereumToken
+        );
 
-        emit LogLock(_ethereumSender, _harmonyReceiver, _ethereumToken, ONEAddress, _amountEthereumToken, _amountONE, lockNonce);
+        emit LogLock(
+            _ethereumSender,
+            _harmonyReceiver,
+            _ethereumToken,
+            ONEAddress,
+            _amountEthereumToken,
+            _amountONE,
+            lockNonce
+        );
     }
 
     /*
@@ -184,20 +221,23 @@ contract EthereumBank {
     function unlockFunds(
         address payable _receiver,
         address _token,
-        uint256 _amount
+        uint256 _amount,
+        ILendingPool lendingPool
     ) internal {
         // Decrement locked funds mapping by the amount of tokens to be unlocked
-        lockedFunds[_token] = lockedFunds[_token].sub(_amount);
 
         // Transfer funds to intended recipient
-        if (_token == ETHAddress) {
-            _receiver.transfer(_amount);
-        } else {
-            require(
-                IERC20(_token).transfer(_receiver, _amount),
-                "Token transfer failed"
-            );
-        }
+        // if (_token == ETHAddress) {
+        //     _receiver.transfer(_amount);
+        // } else {
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
+            _token
+        );
+        address aToken = reserve.aTokenAddress;
+        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
+        require(_amount > totalAmount, "Not enough aToken fund");
+        lendingPool.withdraw(_token, _amount, _receiver);
+        // }
 
         emit LogUnlock(_receiver, _token, _amount);
     }
