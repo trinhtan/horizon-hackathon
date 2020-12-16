@@ -1,6 +1,8 @@
 import * as actions from './action';
 const initState = {
-  address: null
+  address: null,
+  hmy: null,
+  isAuthorized: false
 };
 
 const reducer = (state = initState, action) => {
@@ -9,6 +11,16 @@ const reducer = (state = initState, action) => {
       return {
         ...state,
         address: action.address
+      };
+    case actions.SET_HMY:
+      return {
+        ...state,
+        hmy: action.hmy
+      };
+    case actions.SET_IS_AUTHORIZED:
+      return {
+        ...state,
+        isAuthorized: action.isAuthorized
       };
     default:
       return state;

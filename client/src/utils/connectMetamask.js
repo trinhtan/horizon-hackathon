@@ -5,7 +5,7 @@
 import detectEthereumProvider from '@metamask/detect-provider';
 import Web3 from 'web3';
 import store from 'store';
-import { setAddress, setChainId, setWeb3 } from 'store/eth/action.js';
+import { setAddress, setChainId, setWeb3, setIsAuthorized } from 'store/eth/action.js';
 // import { notification } from 'antd';
 
 // const openNotification = (message, description) => {
@@ -42,8 +42,6 @@ export const connectMetamask = async isSender => {
     if (provider !== window.ethereum) {
       console.error('Do you have multiple wallets installed?');
     } else {
-      const web3 = new Web3(window.ethereum);
-      store.dispatch(setWeb3(web3));
       connect();
     }
     // Access the decentralized web!
@@ -87,9 +85,27 @@ export const connectMetamask = async isSender => {
   async function handleAccountsChanged(accounts) {
     if (accounts.length === 0) {
       // MetaMask is locked or the user has not connected any accounts
-      console.log('Please connect to MetaMask.');
+      store.dispatch(setWeb3(null));
+      store.dispatch(setAddress(null));
+      store.dispatch(setIsAuthorized(false));
+      localStorage.setItem(
+        'harmony_eth_session',
+        JSON.stringify({
+          address: ''
+        })
+      );
+      console.log('MetaMask is disconnected');
     } else if (accounts[0] !== currentAccount) {
+      const web3 = new Web3(window.ethereum);
+      store.dispatch(setWeb3(web3));
+      store.dispatch(setIsAuthorized(true));
       currentAccount = accounts[0];
+      localStorage.setItem(
+        'harmony_eth_session',
+        JSON.stringify({
+          address: currentAccount
+        })
+      );
       store.dispatch(setAddress(currentAccount));
       console.log('Connect ' + currentAccount);
       // Do any other work!
@@ -114,10 +130,23 @@ export const connectMetamask = async isSender => {
         if (err.code === 4001) {
           // EIP-1193 userRejectedRequest error
           // If this happens, the user rejected the connection request.
+          store.dispatch(setAddress(null));
           console.log('Please connect to MetaMask.');
         } else {
           console.error(err);
         }
       });
   }
+};
+
+export const signOut = async isSender => {
+  store.dispatch(setWeb3(null));
+  store.dispatch(setAddress(null));
+  store.dispatch(setIsAuthorized(false));
+  localStorage.setItem(
+    'harmony_eth_session',
+    JSON.stringify({
+      address: ''
+    })
+  );
 };

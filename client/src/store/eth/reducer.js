@@ -3,7 +3,8 @@ const initState = {
   address: null,
   web3: null,
   chainId: 42,
-  bridgeBankInstance: null
+  bridgeBankInstance: null,
+  isAuthorized: false
 };
 
 const reducer = (state = initState, action) => {
@@ -16,7 +17,7 @@ const reducer = (state = initState, action) => {
     case actions.SET_BRIDGE_BANK:
       return {
         ...state,
-        address: action.bridgeBankInstance
+        bridgeBankInstance: action.bridgeBankInstance
       };
     case actions.SET_CHAINID:
       return {
@@ -27,6 +28,11 @@ const reducer = (state = initState, action) => {
       return {
         ...state,
         web3: action.web3
+      };
+    case actions.SET_IS_AUTHORIZED:
+      return {
+        ...state,
+        isAuthorized: action.isAuthorized
       };
     default:
       return state;
