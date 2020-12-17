@@ -235,7 +235,7 @@ contract EthereumBank {
         );
         address aToken = reserve.aTokenAddress;
         uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
-        require(_amount > totalAmount, "Not enough aToken fund");
+        require(_amount <= totalAmount, "Not enough aToken fund");
         lendingPool.withdraw(_token, _amount, _receiver);
         // }
 
