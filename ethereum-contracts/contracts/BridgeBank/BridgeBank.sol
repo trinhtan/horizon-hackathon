@@ -7,6 +7,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "../ILendingPool.sol";
 import "../Oracle.sol";
+import "../IWETHGateway.sol";
 
 interface BandOracleInterface {
     struct ReferenceData {
@@ -38,6 +39,7 @@ contract BridgeBank is EthereumBank {
     HarmonyBridge public harmonyBridge;
     BandOracleInterface public bandOracleInterface;
     ILendingPool public lendingPool;
+    IWETHGateway public wethGateway;
 
     event UpdateOracle(address _newOracle);
     event UpdateHarmonyBridge(address _newHarmonyBridge);
@@ -52,7 +54,8 @@ contract BridgeBank is EthereumBank {
         address _bandOracleAddress,
         uint256 _feeNumerator,
         uint256 _feeDenominator,
-        address _lendingPool
+        address _lendingPool,
+        address _wethGateway
     ) public {
         operator = _operatorAddress;
         oracle = Oracle(_oracleAddress);
@@ -61,6 +64,7 @@ contract BridgeBank is EthereumBank {
         feeNumerator = _feeNumerator;
         feeDenominator = _feeDenominator;
         lendingPool = ILendingPool(_lendingPool);
+        wethGateway = IWETHGateway(_wethGateway);
     }
 
     modifier onlyOperator() {
@@ -175,6 +179,8 @@ contract BridgeBank is EthereumBank {
             "The transactions value must be equal the specified amount (in wei)"
         );
 
+        wethGateway.depostETH.value(msg.value)(msg.sender, 0);
+
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData("ETH", "ONE");
         uint256 amountONE = _amountETH.mul(data.rate);
@@ -208,6 +214,8 @@ contract BridgeBank is EthereumBank {
             msg.value == _amountETH + fee,
             "The transactions value must be equal the specified amount (in wei)"
         );
+
+        wethGateway.depostETH.value(msg.value)(msg.sender, 0);
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData("ETH", _destTokenSymbol);
@@ -252,6 +260,16 @@ contract BridgeBank is EthereumBank {
             ),
             "Contract token allowances insufficient to complete this lock request"
         );
+        IERC20(_ethereumToken).approve(
+            address(lendingPool),
+            _amountEthereumToken + fee
+        );
+        lendingPool.deposit(
+            _ethereumToken,
+            _amountEthereumToken + fee,
+            address(this),
+            0
+        );
 
         string memory symbol = ERC20Detailed(_amountEthereumToken).symbol();
 
@@ -294,6 +312,16 @@ contract BridgeBank is EthereumBank {
             ),
             "Contract token allowances insufficient to complete this lock request"
         );
+        IERC20(_ethereumToken).approve(
+            address(lendingPool),
+            _amountEthereumToken + fee
+        );
+        lendingPool.deposit(
+            _ethereumToken,
+            _amountEthereumToken + fee,
+            address(this),
+            0
+        );
 
         string memory symbol = ERC20Detailed(_ethereumToken).symbol();
 
@@ -310,30 +338,28 @@ contract BridgeBank is EthereumBank {
         );
     }
 
-    function unlock(
+    function unlockERC20(
         address payable _receiver,
         address _token,
         uint256 _amount
     ) public onlyHarmonyBridge {
         require(tokenPairMaps[_token] != address(0), "Invalid Token");
-
-        require(
-            getLockedFunds(_token) >= _amount,
-            "The Bank does not hold enough locked tokens to fulfill this request."
-        );
-
-        if (_token == ETHAddress) {
-            require(
-                address(this).balance >= _amount,
-                "Insufficient ethereum balance for delivery."
-            );
-        } else {
-            require(
-                IERC20(_token).balanceOf(address(this)) >= _amount,
-                "Insufficient ERC20 token balance for delivery."
-            );
-        }
         unlockFunds(_receiver, _token, _amount, lendingPool);
+    }
+
+    function unlockETH(
+        address payable _receiver,
+        address _token,
+        uint256 _amount
+    ) public onlyHarmonyBridge {
+        require(tokenPairMaps[_token] != address(0), "Invalid Token");
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
+            _token
+        );
+        address aToken = reserve.aTokenAddress;
+        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
+        require(_amount <= totalAmount, "Not enough aWETH fund");
+        wethGateway.withdrawETH(_amount, msg.sender);
     }
 
     function updateOracle(address _oracleAddress) public onlyOperator {
@@ -355,27 +381,6 @@ contract BridgeBank is EthereumBank {
         emit UpdateFee(_feeNumerator, _feeDenominator);
     }
 
-    function withdrawETH(address payable _receiver, uint256 _amountETH)
-        public
-        onlyOperator
-    {
-        bool check = checkWithdrawable(ETHAddress, _amountETH);
-        require(check, "Insufficient balance");
-        _receiver.transfer(_amountETH);
-        emit WithdrawETH(_receiver, _amountETH);
-    }
-
-    function withdrawERC20(
-        address _token,
-        address _receiver,
-        uint256 _amount
-    ) public onlyOperator {
-        bool check = checkWithdrawable(_token, _amount);
-        require(check, "Insufficient balance");
-        IERC20(_token).transfer(_receiver, _amount);
-        emit WithdrawERC20(_token, _receiver, _amount);
-    }
-
     function checkWithdrawable(address _token, uint256 _amount)
         internal
         view
@@ -390,4 +395,25 @@ contract BridgeBank is EthereumBank {
                 _amount;
         }
     }
+
+    // function withdrawETH(address payable _receiver, uint256 _amountETH)
+    //     public
+    //     onlyOperator
+    // {
+    //     bool check = checkWithdrawable(ETHAddress, _amountETH);
+    //     require(check, "Insufficient balance");
+    //     _receiver.transfer(_amountETH);
+    //     emit WithdrawETH(_receiver, _amountETH);
+    // }
+
+    // function withdrawERC20(
+    //     address _token,
+    //     address _receiver,
+    //     uint256 _amount
+    // ) public onlyOperator {
+    //     bool check = checkWithdrawable(_token, _amount);
+    //     require(check, "Insufficient balance");
+    //     IERC20(_token).transfer(_receiver, _amount);
+    //     emit WithdrawERC20(_token, _receiver, _amount);
+    // }
 }
