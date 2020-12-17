@@ -154,11 +154,18 @@ contract HarmonyBridge {
     function unlockTokens(uint256 _unlockID) internal {
         UnlockClaim memory unlockClaim = unlockClaims[_unlockID];
 
-        bridgeBank.unlock(
-            unlockClaim.ethereumReceiver,
-            unlockClaim.token,
-            unlockClaim.amount
-        );
+        if (unlockClaim.token == bridgeBank.ETHAddress()){
+            bridgeBank.unlockETH(
+                unlockClaim.ethereumReceiver,
+                unlockClaim.amount
+            );
+        } else {
+            bridgeBank.unlockERC20(
+                unlockClaim.ethereumReceiver,
+                unlockClaim.token,
+                unlockClaim.amount
+            );
+        }
     }
 
     function isUnlockClaimActive(uint256 _unlockID) public view returns (bool) {
