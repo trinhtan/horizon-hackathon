@@ -6,10 +6,10 @@ import "log"
 // serve as a local store of witnessed events and allow for re-trying failed relays.
 
 // EventRecords map of transaction hashes to EthereumEvent structs
-var EventRecords = make(map[string]EthereumEvent)
+var EventRecords = make(map[string]EthereumLogLockEvent)
 
 // NewEventWrite add a validator's address to the official claims list
-func NewEventWrite(txHash string, event EthereumEvent) {
+func NewEventWrite(txHash string, event EthereumLogLockEvent) {
 	EventRecords[txHash] = event
 }
 

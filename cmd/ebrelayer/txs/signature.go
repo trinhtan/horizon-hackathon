@@ -54,15 +54,15 @@ func LoadSender() (address common.Address, err error) {
 }
 
 // GenerateClaimMessage Generates a hashed message containing a ProphecyClaim event's data
-func GenerateClaimMessage(event types.UnlockClaimEvent) []byte {
-	prophecyID := solsha3.Int256(event.ProphecyID)
+func GenerateClaimMessage(event types.EthereumLogNewUnlockClaimEvent) []byte {
+	unlockID := solsha3.Int256(event.UnlockID)
 	sender := solsha3.Int256(event.HarmonySender.Hex())
 	recipient := solsha3.Int256(event.EthereumReceiver.Hex())
 	token := solsha3.String(event.TokenAddress.Hex())
 	amount := solsha3.Int256(event.Amount)
 
 	// Generate claim message using ProphecyClaim data
-	return solsha3.SoliditySHA3(prophecyID, sender, recipient, token, amount)
+	return solsha3.SoliditySHA3(unlockID, sender, recipient, token, amount)
 }
 
 // PrefixMsg prefixes a message for verification, mimics behavior of web3.eth.sign
