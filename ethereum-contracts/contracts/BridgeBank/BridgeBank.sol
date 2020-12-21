@@ -18,8 +18,12 @@ contract BridgeBank {
     uint256 public SAFE_NUMBER = 1e12;
     address public WETH;
     uint256 public lockNonce;
-    address public ETHAddress = address(0x1111111111111111111111111111111111111111);
-    address public ONEAddress = address(0x2222222222222222222222222222222222222222);
+    address public ETHAddress = address(
+        0x1111111111111111111111111111111111111111
+    );
+    address public ONEAddress = address(
+        0x2222222222222222222222222222222222222222
+    );
 
     mapping(address => uint256) public lockedFunds;
     mapping(address => address) public tokenPairMaps;
@@ -103,7 +107,9 @@ contract BridgeBank {
         addTokenInternal(_token, _hmyToken);
     }
 
-    function addTokenInternal(address _ethereumToken, address _harmonyToken) internal {
+    function addTokenInternal(address _ethereumToken, address _harmonyToken)
+        internal
+    {
         tokenPairMaps[_ethereumToken] = _harmonyToken;
         string memory symbol = ERC20Detailed(_ethereumToken).symbol();
         symbolToToken[symbol] = _ethereumToken;
@@ -222,7 +228,7 @@ contract BridgeBank {
             "The transactions value must be equal the specified amount (in wei)"
         );
 
-        (bool success,) = address(wethGateway).call.value(msg.value)(
+        (bool success, ) = address(wethGateway).call.value(msg.value)(
             abi.encodeWithSignature(
                 "depositETH(address,uint16)",
                 address(this),
@@ -235,7 +241,7 @@ contract BridgeBank {
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData("ETH", "ONE");
 
-        uint256 amountONE = _amountETH.mul(data.rate);
+        uint256 amountONE = _amountETH.mul(data.rate).div(10**18);
 
         lockNonce = lockNonce.add(1);
         lockedFunds[ETHAddress] = lockedFunds[ETHAddress].add(_amountETH);
@@ -273,7 +279,7 @@ contract BridgeBank {
             "The transactions value must be equal the specified amount (in wei)"
         );
 
-        (bool success,) = address(wethGateway).call.value(msg.value)(
+        (bool success, ) = address(wethGateway).call.value(msg.value)(
             abi.encodeWithSignature(
                 "depositETH(address,uint16)",
                 address(this),
@@ -285,7 +291,7 @@ contract BridgeBank {
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData("ETH", _destTokenSymbol);
-        uint256 amountHarmonyToken = _amountETH.mul(data.rate);
+        uint256 amountHarmonyToken = _amountETH.mul(data.rate).div(10**18);
 
         lockNonce = lockNonce.add(1);
         lockedFunds[ETHAddress] = lockedFunds[ETHAddress].add(_amountETH);
@@ -348,7 +354,9 @@ contract BridgeBank {
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData(symbol, _destTokenSymbol);
-        uint256 amountHarmonyToken = _amountEthereumToken.mul(data.rate);
+        uint256 amountHarmonyToken = _amountEthereumToken.mul(data.rate).div(
+            10**18
+        );
 
         lockNonce = lockNonce.add(1);
         lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
@@ -408,7 +416,7 @@ contract BridgeBank {
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData(symbol, "ONE");
-        uint256 amountONE = _amountEthereumToken.mul(data.rate);
+        uint256 amountONE = _amountEthereumToken.mul(data.rate).div(10 ^ 18);
 
         lockNonce = lockNonce.add(1);
         lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
@@ -441,28 +449,22 @@ contract BridgeBank {
         require(_amount <= totalAmount, "Not enough aToken fund");
 
         lendingPool.withdraw(_token, _amount, _receiver);
-        lockedFunds[_token] = lockedFunds[_token].sub(
-            _amount
-        );
+        lockedFunds[_token] = lockedFunds[_token].sub(_amount);
 
         emit LogUnlock(_receiver, _token, _amount);
     }
 
-    function unlockETH(
-        address payable _receiver,
-        uint256 _amount
-    ) public onlyHarmonyBridge {
-        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
-            WETH
-        );
+    function unlockETH(address payable _receiver, uint256 _amount)
+        public
+        onlyHarmonyBridge
+    {
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(WETH);
         address aToken = reserve.aTokenAddress;
         uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
         require(_amount <= totalAmount, "Not enough aWETH fund");
         IERC20(aToken).approve(address(wethGateway), _amount);
         wethGateway.withdrawETH(_amount, _receiver);
-        lockedFunds[ETHAddress] = lockedFunds[ETHAddress].sub(
-            _amount
-        );
+        lockedFunds[ETHAddress] = lockedFunds[ETHAddress].sub(_amount);
 
         emit LogUnlock(_receiver, ETHAddress, _amount);
     }
@@ -484,5 +486,36 @@ contract BridgeBank {
         feeNumerator = _feeNumerator;
         feeDenominator = _feeDenominator;
         emit UpdateFee(_feeNumerator, _feeDenominator);
+    }
+
+    function earnInterest(uint256 _amount, address _token) public onlyOperator {
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
+            _token
+        );
+        address aToken = reserve.aTokenAddress;
+        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
+        require(
+            (totalAmount - lockedFunds[_token] >= _amount),
+            "Cannot get fund of users"
+        );
+        if (_token != WETH) {
+            lendingPool.withdraw(_token, _amount, msg.sender);
+        } else {
+            IERC20(aToken).approve(address(wethGateway), _amount);
+            wethGateway.withdrawETH(_amount, msg.sender);
+        }
+    }
+
+    function getInterest(address _token) public returns (uint256) {
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
+            _token
+        );
+        address aToken = reserve.aTokenAddress;
+        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
+        return totalAmount - lockedFunds[_token];
+    }
+
+    function withdrawETH() public onlyOperator {
+        msg.sender.transfer(address(this).balance);
     }
 }
