@@ -131,12 +131,12 @@ contract Oracle {
         // Update the BridgeClaim's status
         completeUnlock(_unlockID);
 
-        // emit LogProphecyProcessed(
-        //     _unlockID,
-        //     unlockPowerCurrent,
-        //     unlockPowerThreshold,
-        //     msg.sender
-        // );
+        emit LogUnlockProcessed(
+            _unlockID,
+            unlockPowerCurrent,
+            unlockPowerThreshold,
+            msg.sender
+        );
     }
 
     function checkBridgeUnlock(uint256 _unlockID)

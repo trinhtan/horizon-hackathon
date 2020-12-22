@@ -4,12 +4,14 @@ pragma experimental ABIEncoderV2;
 import "../../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../node_modules/openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "../../node_modules/openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
+import "../../node_modules/openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import "../libraries/openzeppelin-upgradeability/VersionedInitializable.sol";
 import "../interfaces/aave-protocol-v2/ILendingPool.sol";
 import "../interfaces/aave-protocol-v2/IWETHGateway.sol";
 import "../interfaces/band-oracle/BandOracleInterface.sol";
 import "../Oracle.sol";
 
-contract BridgeBank {
+contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     using SafeMath for uint256;
 
     address public operator;
@@ -25,9 +27,13 @@ contract BridgeBank {
         0x2222222222222222222222222222222222222222
     );
 
-    mapping(address => uint256) public lockedFunds;
-    mapping(address => address) public tokenPairMaps;
-    mapping(string => address) public symbolToToken;
+    struct TokenData {
+        uint256 lockedFund;
+        address harmonyMappedToken;
+        bool isActive;
+    }
+
+    mapping (address => TokenData) public tokensData;
 
     Oracle public oracle;
     HarmonyBridge public harmonyBridge;
@@ -45,30 +51,11 @@ contract BridgeBank {
         address _harmonyReceiver,
         address _ethereumToken,
         address _harmonyToken,
-        uint256 _amountEthereumToken,
-        uint256 _amountHarmonyToken,
+        uint256 _ethereumTokenAmount,
+        uint256 _harmonyTokenAmount,
         uint256 _nonce
     );
     event LogUnlock(address _to, address _token, uint256 _value);
-
-    constructor(
-        address _operatorAddress,
-        address _oracleAddress,
-        address _harmonyBridgeAddress,
-        address _bandOracleAddress,
-        address _lendingPool,
-        address _wethGateway,
-        address _weth
-    ) public {
-        operator = _operatorAddress;
-        oracle = Oracle(_oracleAddress);
-        harmonyBridge = HarmonyBridge(_harmonyBridgeAddress);
-        bandOracleInterface = BandOracleInterface(_bandOracleAddress);
-        lendingPool = ILendingPool(_lendingPool);
-        wethGateway = IWETHGateway(_wethGateway);
-        WETH = _weth;
-        lockNonce = 0;
-    }
 
     modifier availableNonce() {
         require(lockNonce + 1 > lockNonce, "No available nonces.");
@@ -96,51 +83,114 @@ contract BridgeBank {
         _;
     }
 
+    modifier tokenMustBeActive(address _ethereumToken) {
+        require(tokensData[_ethereumToken].isActive, "Token is not active");
+        _;
+    }
+
+    modifier amountMustGreaterThanZero(uint256 _amount) {
+        require(_amount > 0, "Amount token must be greater than zero");
+        _;
+    }
+
+    modifier receiverMustBeValid(address _receiver) {
+        require(_receiver != address(0), "Receiver must be valid");
+        _;
+    }
+
+    modifier tokenAddressMustBeValid(address _token) {
+        require(_token != address(0), "Token address must be valid");
+        _;
+    }
+
+    modifier tokenMustNotBeETH(address _token) {
+        require(_token != ETHAddress, "Token must not be ETH");
+        _;
+    }
+
+    function initialize(
+        address _operatorAddress,
+        address _oracleAddress,
+        address _harmonyBridgeAddress,
+        address _bandOracleAddress,
+        address _lendingPool,
+        address _wethGateway,
+        address _weth,
+        address _harmonyWETH
+    ) public initializer {
+        operator = _operatorAddress;
+        oracle = Oracle(_oracleAddress);
+        harmonyBridge = HarmonyBridge(_harmonyBridgeAddress);
+        bandOracleInterface = BandOracleInterface(_bandOracleAddress);
+        lendingPool = ILendingPool(_lendingPool);
+        wethGateway = IWETHGateway(_wethGateway);
+        WETH = _weth;
+        lockNonce = 0;
+        tokensData[ETHAddress].harmonyMappedToken = _harmonyWETH;
+        tokensData[ETHAddress].lockedFund = 0;
+        tokensData[ETHAddress].isActive = true;
+
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(WETH);
+        address aToken = reserve.aTokenAddress;
+        IERC20(aToken).approve(address(wethGateway), uint256(-1));
+    }
+
+    uint256 public constant BRIDGEBANK_REVISION = 0x1;
+
+    function getRevision() internal pure returns (uint256) {
+        return BRIDGEBANK_REVISION;
+    }
+
     function() external payable onlyOperator {}
 
-    function addToken(address _token, address _hmyToken) public onlyOperator {
+    function addToken(address _ethereumToken, address _harmonyToken) public onlyOperator {
         require(
-            _token != address(0) && _hmyToken != address(0),
-            "Invalid token"
+            _ethereumToken != address(0) && _harmonyToken != address(0),
+            "Token address must be valid"
         );
-        require(tokenPairMaps[_token] == address(0), "Token already added!");
-        addTokenInternal(_token, _hmyToken);
+
+        require(tokensData[_ethereumToken].harmonyMappedToken == address(0), "Token already added!");
+
+        addDataTokenInternal(tokensData[_ethereumToken], _harmonyToken);
+
+        IERC20(_ethereumToken).approve(
+            address(lendingPool),
+            uint256(-1)
+        );
     }
 
-    function addTokenInternal(address _ethereumToken, address _harmonyToken)
+    function addDataTokenInternal(TokenData storage data, address _harmonyToken)
         internal
     {
-        tokenPairMaps[_ethereumToken] = _harmonyToken;
-        string memory symbol = ERC20Detailed(_ethereumToken).symbol();
-        symbolToToken[symbol] = _ethereumToken;
+        data.lockedFund = 0;
+        data.harmonyMappedToken = _harmonyToken;
+        data.isActive = true;
     }
 
-    function removeToken(address _token) public onlyOperator {
-        require(_token != address(0), "Invalid token");
-        require(tokenPairMaps[_token] != address(0), "Token already removed!");
-        removeTokenInternal(_token);
+    function deactivateToken(address _ethereumToken) public onlyOperator tokenAddressMustBeValid(_ethereumToken) {
+        require(tokensData[_ethereumToken].isActive == true, "Token already deactivated!");
+        tokensData[_ethereumToken].isActive = false;
     }
 
-    function removeTokenInternal(address _ethereumToken) internal {
-        tokenPairMaps[_ethereumToken] = address(0);
-        string memory symbol = ERC20Detailed(_ethereumToken).symbol();
-        symbolToToken[symbol] = address(0);
+    function activateToken(address _ethereumToken) public onlyOperator tokenAddressMustBeValid(_ethereumToken) {
+        require(tokensData[_ethereumToken].isActive == false, "Token already activated!");
+        tokensData[_ethereumToken].isActive = true;
     }
 
-    function isAcceptedToken(address _token) public view returns (bool) {
-        return tokenPairMaps[_token] != address(0);
+    function isActiveToken(address _ethereumToken) public view returns (bool) {
+        return tokensData[_ethereumToken].isActive;
     }
 
-    function getTokenMappedAddress(address _token)
+    function getTokenMappedAddress(address _ethereumToken)
         public
         view
         returns (address)
     {
-        return tokenPairMaps[_token];
+        return tokensData[_ethereumToken].harmonyMappedToken;
     }
 
-    function getLockedFunds(address _token) public view returns (uint256) {
-        return lockedFunds[_token];
+    function getLockedFund(address _ethereumToken) public view returns (uint256) {
+        return tokensData[_ethereumToken].lockedFund;
     }
 
     /*
@@ -153,75 +203,48 @@ contract BridgeBank {
     function swapToken_1_1(
         address _harmonyReceiver,
         address _ethereumToken,
-        uint256 _amountEthereumToken
-    ) public availableNonce() {
-        require(
-            _ethereumToken != ETHAddress &&
-                tokenPairMaps[_ethereumToken] != address(0),
-            "Invalid token"
-        );
-
-        uint256 fee;
-
-        if (feeNumerator != 0 && feeDenominator != 0) {
-            fee = _amountEthereumToken
-                .mul(feeNumerator)
-                .mul(SAFE_NUMBER)
-                .div(feeDenominator)
-                .div(SAFE_NUMBER);
-        }
+        uint256 _ethereumTokenAmount
+    ) public
+        nonReentrant
+        availableNonce
+        tokenMustNotBeETH(_ethereumToken)
+        tokenMustBeActive(_ethereumToken)
+        amountMustGreaterThanZero(_ethereumTokenAmount)
+        receiverMustBeValid(_harmonyReceiver)
+    {
+        uint256 fee = calculateFee(_ethereumTokenAmount);
 
         require(
             IERC20(_ethereumToken).transferFrom(
                 msg.sender,
                 address(this),
-                _amountEthereumToken + fee
+                _ethereumTokenAmount + fee
             ),
             "Contract token allowances insufficient to complete this lock request"
         );
-        IERC20(_ethereumToken).approve(
-            address(lendingPool),
-            _amountEthereumToken + fee
-        );
+
         lendingPool.deposit(
             _ethereumToken,
-            _amountEthereumToken + fee,
+            _ethereumTokenAmount + fee,
             address(this),
             0
         );
 
-        lockNonce = lockNonce.add(1);
-        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
-            _amountEthereumToken
-        );
+        address _harmonyToken = tokensData[_ethereumToken].harmonyMappedToken;
 
-        address _harmonyToken = tokenPairMaps[_ethereumToken];
-
-        emit LogLock(
-            msg.sender,
-            _harmonyReceiver,
-            _ethereumToken,
-            _harmonyToken,
-            _amountEthereumToken,
-            _amountEthereumToken,
-            lockNonce
-        );
+        updateOnLock(msg.sender, _harmonyReceiver, _ethereumToken, _harmonyToken, _ethereumTokenAmount, _ethereumTokenAmount);
     }
 
     function swapETHForONE(address _harmonyReceiver, uint256 _amountETH)
         public
         payable
-        availableNonce()
+        nonReentrant
+        availableNonce
+        tokenMustBeActive(ETHAddress)
+        amountMustGreaterThanZero(_amountETH)
+        receiverMustBeValid(_harmonyReceiver)
     {
-        uint256 fee;
-
-        if (feeNumerator != 0 && feeDenominator != 0) {
-            fee = _amountETH
-                .mul(feeNumerator)
-                .mul(SAFE_NUMBER)
-                .div(feeDenominator)
-                .div(SAFE_NUMBER);
-        }
+        uint256 fee = calculateFee(_amountETH);
 
         require(
             msg.value == _amountETH + fee,
@@ -241,38 +264,55 @@ contract BridgeBank {
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData("ETH", "ONE");
 
-        uint256 amountONE = _amountETH.mul(data.rate).div(10**18);
+        uint256 amountONE = _amountETH.mul(data.rate).div(1e18);
 
-        lockNonce = lockNonce.add(1);
-        lockedFunds[ETHAddress] = lockedFunds[ETHAddress].add(_amountETH);
+        updateOnLock(msg.sender, _harmonyReceiver, ETHAddress, ONEAddress, _amountETH, amountONE);
+    }
 
-        emit LogLock(
-            msg.sender,
-            _harmonyReceiver,
-            ETHAddress,
-            ONEAddress,
-            _amountETH,
-            amountONE,
-            lockNonce
+    function swapETHForWETH(address _harmonyReceiver, uint256 _amountETH)
+        public
+        payable
+        nonReentrant
+        availableNonce
+        tokenMustBeActive(ETHAddress)
+        amountMustGreaterThanZero(_amountETH)
+        receiverMustBeValid(_harmonyReceiver)
+    {
+        uint256 fee = calculateFee(_amountETH);
+
+        require(
+            msg.value == _amountETH + fee,
+            "The transactions value must be equal the specified amount (in wei)"
         );
+
+        (bool success, ) = address(wethGateway).call.value(msg.value)(
+            abi.encodeWithSignature(
+                "depositETH(address,uint16)",
+                address(this),
+                0
+            )
+        );
+
+        require(success, "Aave LendingPool: deposit ETH failed!");
+
+        address _harmonyWETH = tokensData[ETHAddress].harmonyMappedToken;
+
+        updateOnLock(msg.sender, _harmonyReceiver, ETHAddress, _harmonyWETH, _amountETH, _amountETH);
     }
 
     function swapETHForToken(
         address _harmonyReceiver,
         uint256 _amountETH,
-        string memory _destTokenSymbol
-    ) public payable availableNonce() {
-        require(symbolToToken[_destTokenSymbol] != address(0), "Invalid Token");
-
-        uint256 fee;
-
-        if (feeNumerator != 0 && feeDenominator != 0) {
-            fee = _amountETH
-                .mul(feeNumerator)
-                .mul(SAFE_NUMBER)
-                .div(feeDenominator)
-                .div(SAFE_NUMBER);
-        }
+        address _destToken
+    ) public payable
+        nonReentrant
+        availableNonce
+        tokenMustBeActive(ETHAddress)
+        tokenMustBeActive(_destToken)
+        amountMustGreaterThanZero(_amountETH)
+        receiverMustBeValid(_harmonyReceiver)
+    {
+        uint256 fee = calculateFee(_amountETH);
 
         require(
             msg.value == _amountETH + fee,
@@ -290,183 +330,175 @@ contract BridgeBank {
         require(success, "Aave LendingPool: deposit ETH failed!");
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
-            .getReferenceData("ETH", _destTokenSymbol);
-        uint256 amountHarmonyToken = _amountETH.mul(data.rate).div(10**18);
+            .getReferenceData("ETH", ERC20Detailed(_destToken).symbol());
 
-        lockNonce = lockNonce.add(1);
-        lockedFunds[ETHAddress] = lockedFunds[ETHAddress].add(_amountETH);
+        uint256 harmonyTokenAmount = _amountETH.mul(data.rate).div(1e18);
 
-        address harmonyToken = tokenPairMaps[symbolToToken[_destTokenSymbol]];
+        address harmonyToken = tokensData[_destToken].harmonyMappedToken;
 
-        emit LogLock(
-            msg.sender,
-            _harmonyReceiver,
-            ETHAddress,
-            harmonyToken,
-            _amountETH,
-            amountHarmonyToken,
-            lockNonce
-        );
+        updateOnLock(msg.sender, _harmonyReceiver, ETHAddress, harmonyToken, _amountETH, harmonyTokenAmount);
     }
 
     function swapTokenForToken(
         address _harmonyReceiver,
         address _ethereumToken,
-        uint256 _amountEthereumToken,
-        string memory _destTokenSymbol
-    ) public availableNonce() {
-        require(
-            symbolToToken[_destTokenSymbol] != address(0) &&
-                tokenPairMaps[_ethereumToken] != address(0),
-            "Invalid Token"
-        );
-
-        uint256 fee;
-
-        if (feeNumerator != 0 && feeDenominator != 0) {
-            fee = _amountEthereumToken
-                .mul(feeNumerator)
-                .mul(SAFE_NUMBER)
-                .div(feeDenominator)
-                .div(SAFE_NUMBER);
-        }
+        uint256 _ethereumTokenAmount,
+        address _destToken
+    ) public
+        availableNonce
+        nonReentrant
+        tokenMustBeActive(_ethereumToken)
+        tokenMustBeActive(_destToken)
+        amountMustGreaterThanZero(_ethereumTokenAmount)
+        receiverMustBeValid(_harmonyReceiver)
+    {
+        uint256 fee = calculateFee(_ethereumTokenAmount);
 
         require(
             IERC20(_ethereumToken).transferFrom(
                 msg.sender,
                 address(this),
-                _amountEthereumToken + fee
+                _ethereumTokenAmount + fee
             ),
             "Contract token allowances insufficient to complete this lock request"
         );
-        IERC20(_ethereumToken).approve(
-            address(lendingPool),
-            _amountEthereumToken + fee
-        );
+
         lendingPool.deposit(
             _ethereumToken,
-            _amountEthereumToken + fee,
+            _ethereumTokenAmount + fee,
             address(this),
             0
         );
 
-        string memory symbol = ERC20Detailed(_amountEthereumToken).symbol();
+        BandOracleInterface.ReferenceData memory data = bandOracleInterface
+            .getReferenceData(ERC20Detailed(_ethereumToken).symbol(), ERC20Detailed(_destToken).symbol());
+        uint256 harmonyTokenAmount = _ethereumTokenAmount.mul(data.rate).div(1e18);
+
+        address harmonyToken = tokensData[_destToken].harmonyMappedToken;
+
+        updateOnLock(msg.sender, _harmonyReceiver, _ethereumToken, harmonyToken, _ethereumTokenAmount, harmonyTokenAmount);
+    }
+
+    function swapTokenForWETH(
+        address _harmonyReceiver,
+        address _ethereumToken,
+        uint256 _ethereumTokenAmount
+    ) public
+        availableNonce
+        nonReentrant
+        tokenMustBeActive(_ethereumToken)
+        amountMustGreaterThanZero(_ethereumTokenAmount)
+        receiverMustBeValid(_harmonyReceiver)
+    {
+        uint256 fee = calculateFee(_ethereumTokenAmount);
+
+        require(
+            IERC20(_ethereumToken).transferFrom(
+                msg.sender,
+                address(this),
+                _ethereumTokenAmount + fee
+            ),
+            "Contract token allowances insufficient to complete this lock request"
+        );
+
+        lendingPool.deposit(
+            _ethereumToken,
+            _ethereumTokenAmount + fee,
+            address(this),
+            0
+        );
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
-            .getReferenceData(symbol, _destTokenSymbol);
-        uint256 amountHarmonyToken = _amountEthereumToken.mul(data.rate).div(
-            10**18
-        );
+            .getReferenceData(ERC20Detailed(_ethereumToken).symbol(), "ETH");
+        uint256 amountWETH = _ethereumTokenAmount.mul(data.rate).div(1e18);
 
-        lockNonce = lockNonce.add(1);
-        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
-            _amountEthereumToken
-        );
+        address harmonyWETH = tokensData[ETHAddress].harmonyMappedToken;
 
-        address harmonyToken = tokenPairMaps[symbolToToken[_destTokenSymbol]];
-
-        emit LogLock(
-            msg.sender,
-            _harmonyReceiver,
-            _ethereumToken,
-            harmonyToken,
-            _amountEthereumToken,
-            amountHarmonyToken,
-            lockNonce
-        );
+        updateOnLock(msg.sender, _harmonyReceiver, _ethereumToken, harmonyWETH, _ethereumTokenAmount, amountWETH);
     }
 
     function swapTokenForONE(
         address _harmonyReceiver,
         address _ethereumToken,
-        uint256 _amountEthereumToken
-    ) public availableNonce() {
-        require(tokenPairMaps[_ethereumToken] != address(0), "Invalid Token");
-
-        uint256 fee;
-
-        if (feeNumerator != 0 && feeDenominator != 0) {
-            fee = _amountEthereumToken
-                .mul(feeNumerator)
-                .mul(SAFE_NUMBER)
-                .div(feeDenominator)
-                .div(SAFE_NUMBER);
-        }
+        uint256 _ethereumTokenAmount
+    ) public
+        availableNonce
+        nonReentrant
+        tokenMustBeActive(_ethereumToken)
+        amountMustGreaterThanZero(_ethereumTokenAmount)
+        receiverMustBeValid(_harmonyReceiver)
+    {
+        uint256 fee = calculateFee(_ethereumTokenAmount);
 
         require(
             IERC20(_ethereumToken).transferFrom(
                 msg.sender,
                 address(this),
-                _amountEthereumToken + fee
+                _ethereumTokenAmount + fee
             ),
             "Contract token allowances insufficient to complete this lock request"
         );
-        IERC20(_ethereumToken).approve(
-            address(lendingPool),
-            _amountEthereumToken + fee
-        );
+
         lendingPool.deposit(
             _ethereumToken,
-            _amountEthereumToken + fee,
+            _ethereumTokenAmount + fee,
             address(this),
             0
         );
 
-        string memory symbol = ERC20Detailed(_ethereumToken).symbol();
-
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
-            .getReferenceData(symbol, "ONE");
-        uint256 amountONE = _amountEthereumToken.mul(data.rate).div(10 ^ 18);
+            .getReferenceData(ERC20Detailed(_ethereumToken).symbol(), "ONE");
+        uint256 amountONE = _ethereumTokenAmount.mul(data.rate).div(1e18);
 
-        lockNonce = lockNonce.add(1);
-        lockedFunds[_ethereumToken] = lockedFunds[_ethereumToken].add(
-            _amountEthereumToken
-        );
-
-        emit LogLock(
-            msg.sender,
-            _harmonyReceiver,
-            _ethereumToken,
-            ONEAddress,
-            _amountEthereumToken,
-            amountONE,
-            lockNonce
-        );
+        updateOnLock(msg.sender, _harmonyReceiver, _ethereumToken, ONEAddress, _ethereumTokenAmount, amountONE);
     }
 
     function unlockERC20(
-        address payable _receiver,
-        address _token,
-        uint256 _amount
-    ) public onlyHarmonyBridge {
-        require(tokenPairMaps[_token] != address(0), "Invalid Token");
+        address payable _ethereumReceiver,
+        address _ethereumToken,
+        uint256 _ethereumTokenAmount
+    ) public
+        nonReentrant
+        onlyHarmonyBridge
+        amountMustGreaterThanZero(_ethereumTokenAmount)
+        receiverMustBeValid(_ethereumReceiver)
+    {
+        require(tokensData[_ethereumToken].harmonyMappedToken != address(0), "Invalid token address");
 
-        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
-            _token
+        require(_ethereumTokenAmount <= getTotalERC20Balance(_ethereumToken) - tokensData[_ethereumToken].lockedFund,
+            "Exceeded amount of Token allowed to withdraw"
         );
-        address aToken = reserve.aTokenAddress;
-        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
-        require(_amount <= totalAmount, "Not enough aToken fund");
 
-        lendingPool.withdraw(_token, _amount, _receiver);
-        lockedFunds[_token] = lockedFunds[_token].sub(_amount);
+        uint256 selfBalance = IERC20(_ethereumToken).balanceOf(address(this));
+        if (_ethereumTokenAmount <= selfBalance) {
+            IERC20(_ethereumToken).transfer(_ethereumReceiver, _ethereumTokenAmount);
+        } else {
+            lendingPool.withdraw(_ethereumToken, _ethereumTokenAmount - selfBalance, _ethereumReceiver);
+            IERC20(_ethereumToken).transfer(_ethereumReceiver, selfBalance);
+        }
 
-        emit LogUnlock(_receiver, _token, _amount);
+        updateOnUnlock(_ethereumToken, _ethereumReceiver, _ethereumTokenAmount);
     }
 
-    function unlockETH(address payable _receiver, uint256 _amount)
+    function unlockETH(address payable _ethereumReceiver, uint256 _amountETH)
         public
         onlyHarmonyBridge
+        nonReentrant
+        amountMustGreaterThanZero(_amountETH)
+        receiverMustBeValid(_ethereumReceiver)
     {
-        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(WETH);
-        address aToken = reserve.aTokenAddress;
-        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
-        require(_amount <= totalAmount, "Not enough aWETH fund");
-        IERC20(aToken).approve(address(wethGateway), _amount);
-        wethGateway.withdrawETH(_amount, _receiver);
-        lockedFunds[ETHAddress] = lockedFunds[ETHAddress].sub(_amount);
+        require(_amountETH <= getTotalETHBalance() - tokensData[ETHAddress].lockedFund,
+            "Exceeded amount of ETH allowed to withdraw"
+        );
 
-        emit LogUnlock(_receiver, ETHAddress, _amount);
+        if (_amountETH <= address(this).balance) {
+            _ethereumReceiver.transfer(_amountETH);
+        } else {
+            wethGateway.withdrawETH(_amountETH - address(this).balance, _ethereumReceiver);
+            _ethereumReceiver.transfer(address(this).balance);
+        }
+
+        updateOnUnlock(ETHAddress, _ethereumReceiver, _amountETH);
     }
 
     function updateOracle(address _oracleAddress) public onlyOperator {
@@ -488,34 +520,94 @@ contract BridgeBank {
         emit UpdateFee(_feeNumerator, _feeDenominator);
     }
 
-    function earnInterest(uint256 _amount, address _token) public onlyOperator {
-        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
-            _token
+    function withdrawETH(address payable _ethereumReceiver, uint256 _amountETH) public onlyOperator nonReentrant {
+        require(_amountETH <= getTotalETHBalance() - tokensData[ETHAddress].lockedFund,
+            "Exceeded amount of ETH allowed to withdraw"
         );
-        address aToken = reserve.aTokenAddress;
-        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
-        require(
-            (totalAmount - lockedFunds[_token] >= _amount),
-            "Cannot get fund of users"
-        );
-        if (_token != WETH) {
-            lendingPool.withdraw(_token, _amount, msg.sender);
+
+        if (_amountETH <= address(this).balance) {
+            _ethereumReceiver.transfer(_amountETH);
         } else {
-            IERC20(aToken).approve(address(wethGateway), _amount);
-            wethGateway.withdrawETH(_amount, msg.sender);
+            wethGateway.withdrawETH(_amountETH - address(this).balance, _ethereumReceiver);
+            _ethereumReceiver.transfer(address(this).balance);
+        }
+        emit WithdrawETH(_ethereumReceiver, _amountETH);
+    }
+
+    function withdrawERC20(address _ethereumToken, address _ethereumReceiver, uint256 _ethereumTokenAmount) public onlyOperator nonReentrant {
+        require(_ethereumTokenAmount <= getTotalERC20Balance(_ethereumToken) - tokensData[_ethereumToken].lockedFund,
+            "Exceeded amount of Token allowed to withdraw"
+        );
+
+        uint256 selfBalance = IERC20(_ethereumToken).balanceOf(address(this));
+        if (_ethereumTokenAmount <= selfBalance) {
+            IERC20(_ethereumToken).transfer(_ethereumReceiver, _ethereumTokenAmount);
+        } else {
+            lendingPool.withdraw(_ethereumToken, _ethereumTokenAmount - selfBalance, _ethereumReceiver);
+            IERC20(_ethereumToken).transfer(_ethereumReceiver, selfBalance);
+        }
+        emit WithdrawERC20(_ethereumToken, _ethereumReceiver, _ethereumTokenAmount);
+    }
+
+    function getTotalETHBalance() public view returns (uint256) {
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(WETH);
+        address aToken = reserve.aTokenAddress;
+        if(aToken != address(0)){
+            return address(this).balance + IERC20(aToken).balanceOf(address(this));
+        } else {
+            return address(this).balance;
         }
     }
 
-    function getInterest(address _token) public returns (uint256) {
-        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(
-            _token
-        );
+    function getTotalERC20Balance(address _ethereumToken) public view returns (uint256) {
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(_ethereumToken);
         address aToken = reserve.aTokenAddress;
-        uint256 totalAmount = IERC20(aToken).balanceOf(address(this));
-        return totalAmount - lockedFunds[_token];
+        if(aToken != address(0)){
+            return IERC20(_ethereumToken).balanceOf(address(this)) + IERC20(aToken).balanceOf(address(this));
+        } else {
+            return IERC20(_ethereumToken).balanceOf(address(this));
+        }
     }
 
-    function withdrawETH() public onlyOperator {
-        msg.sender.transfer(address(this).balance);
+    function calculateFee(uint256 _amountToken) internal view returns (uint256) {
+        uint256 fee;
+
+        if (feeNumerator != 0 && feeDenominator != 0) {
+            fee = _amountToken
+                .mul(feeNumerator)
+                .mul(SAFE_NUMBER)
+                .div(feeDenominator)
+                .div(SAFE_NUMBER);
+        }
+
+        return fee;
+    }
+
+    function updateOnLock(
+        address _ethereumSender,
+        address _harmonyReceiver,
+        address _ethereumToken,
+        address _harmonyToken,
+        uint256 _ethereumTokenAmount,
+        uint256 _harmonyTokenAmount
+    ) internal {
+        lockNonce = lockNonce.add(1);
+
+        tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken].lockedFund.add(_ethereumTokenAmount);
+
+        emit LogLock(
+            _ethereumSender,
+            _harmonyReceiver,
+            _ethereumToken,
+            _harmonyToken,
+            _ethereumTokenAmount,
+            _harmonyTokenAmount,
+            lockNonce
+        );
+    }
+
+    function updateOnUnlock(address _ethereumToken, address _ethereumReceiver, uint256 _ethereumTokenAmount) internal {
+        tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken].lockedFund.sub(_ethereumTokenAmount);
+        emit LogUnlock(_ethereumReceiver, _ethereumToken, _ethereumTokenAmount);
     }
 }

@@ -105,9 +105,8 @@ contract HarmonyBridge {
             valset.isActiveValidator(msg.sender),
             "Must be an active validator"
         );
-        require(bridgeBank.isAcceptedToken(_token) == true, "Invalid Token");
         require(
-            bridgeBank.getLockedFunds(_token) >= _amount,
+            bridgeBank.getLockedFund(_token) >= _amount,
             "Not enough locked assets to complete the proposed prophecy"
         );
 
