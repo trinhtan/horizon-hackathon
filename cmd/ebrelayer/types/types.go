@@ -33,16 +33,16 @@ type EthereumLogLockEvent struct {
 	HarmonyReceiver     common.Address
 	EthereumToken       common.Address
 	HarmonyToken        common.Address
-	AmountEthereumToken *big.Int
-	AmountHarmonyToken  *big.Int
+	EthereumTokenAmount *big.Int
+	HarmonyTokenAmount  *big.Int
 	Nonce               *big.Int
 }
 
 // String implements fmt.Stringer
 func (e EthereumLogLockEvent) String() string {
-	return fmt.Sprintf("\nChain ID: %v\nBridge contract address: %v\nEthereum Token: %v\nHarmony Token: %v\nEthereum Sender: %v\nHarmony Recipient: %v\nAmount Ethereum Token: %v\nAmount Harmony Token: %v\nNonce: %v\n",
+	return fmt.Sprintf("\nChain ID: %v\nBridge contract address: %v\nEthereum Token: %v\nHarmony Token: %v\nEthereum Sender: %v\nHarmony Recipient: %v\nEthereum Token Amount: %v\nHarmony Token Amount: %v\nNonce: %v\n",
 		e.EthereumChainID, e.BridgeBankAddress.Hex(), e.EthereumToken.Hex(), e.HarmonyToken.Hex(), e.EthereumSender.Hex(),
-		e.HarmonyReceiver.Hex(), e.AmountEthereumToken, e.AmountHarmonyToken, e.Nonce)
+		e.HarmonyReceiver.Hex(), e.EthereumTokenAmount, e.HarmonyTokenAmount, e.Nonce)
 }
 
 // EthereumLogNewUnlockClaimEvent struct which represents a LogNewUnlockClaim event
