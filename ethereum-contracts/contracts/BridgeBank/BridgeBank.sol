@@ -10,6 +10,7 @@ import "../interfaces/aave-protocol-v2/ILendingPool.sol";
 import "../interfaces/aave-protocol-v2/IWETHGateway.sol";
 import "../interfaces/band-oracle/BandOracleInterface.sol";
 import "../Oracle.sol";
+import "../BridgeRegistry.sol";
 
 contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     using SafeMath for uint256;
@@ -37,6 +38,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
 
     mapping (address => TokenData) public tokensData;
 
+    BridgeRegistry public bridgeRegistry;
     Oracle public oracle;
     HarmonyBridge public harmonyBridge;
     BandOracleInterface public bandOracleInterface;
@@ -111,18 +113,18 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     }
 
     function initialize(
-        address _operatorAddress,
-        address _oracleAddress,
-        address _harmonyBridgeAddress,
+        address _bridgeRegistry,
         address _bandOracleAddress,
         address _lendingPool,
         address _wethGateway,
         address _weth,
         address _harmonyWETH
     ) payable public initializer {
-        operator = _operatorAddress;
-        oracle = Oracle(_oracleAddress);
-        harmonyBridge = HarmonyBridge(_harmonyBridgeAddress);
+        bridgeRegistry = BridgeRegistry(_bridgeRegistry);
+        operator = bridgeRegistry.getOperator();
+        oracle = Oracle(bridgeRegistry.getOracle());
+        harmonyBridge = HarmonyBridge(bridgeRegistry.getHarmonyBridge());
+
         bandOracleInterface = BandOracleInterface(_bandOracleAddress);
         lendingPool = ILendingPool(_lendingPool);
         wethGateway = IWETHGateway(_wethGateway);
