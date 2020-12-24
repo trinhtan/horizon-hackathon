@@ -70,7 +70,7 @@ contract Valset is VersionedInitializable {
         address _bridgeRegistry,
         address[] memory _initValidators,
         uint256[] memory _initPowers
-    ) payable public initializer {
+    ) public initializer {
         operator = BridgeRegistry(_bridgeRegistry).getOperator();
         currentValsetVersion = 0;
         updateValset(_initValidators, _initPowers);

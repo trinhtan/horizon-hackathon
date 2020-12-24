@@ -1,21 +1,25 @@
 pragma solidity ^0.5.0;
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./libraries/openzeppelin-upgradeability/VersionedInitializable.sol";
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "./libraries/openzeppelin-upgradeability/VersionedInitializable.sol";
 
 import "./Valset.sol";
 import "./BridgeBank/BridgeBank.sol";
 import "./BridgeRegistry.sol";
+import "./Oracle.sol";
 
 contract HarmonyBridge is VersionedInitializable {
     using SafeMath for uint256;
 
-    BridgeRegistry public bridgeRegistry;
 
     uint256 public constant HARMONYBRIDGE_REVISION = 0x1;
     uint256 public unlockClaimCount;
     address public operator;
+    Valset public valset;
+    BridgeBank public bridgeBank;
+    BridgeRegistry public bridgeRegistry;
+    Oracle public oracle;
 
     mapping(uint256 => UnlockClaim) public unlockClaims;
 
@@ -61,9 +65,12 @@ contract HarmonyBridge is VersionedInitializable {
 
     function initialize(
         address _bridgeRegistry
-    ) payable public initializer {
+    ) public initializer {
         bridgeRegistry = BridgeRegistry(_bridgeRegistry);
         operator = bridgeRegistry.getOperator();
+        valset = Valset(bridgeRegistry.getValset());
+        bridgeBank = BridgeBank(bridgeRegistry.getBridgeBank());
+        oracle = Oracle(bridgeRegistry.getOracle());
         unlockClaimCount = 0;
     }
 
@@ -76,10 +83,7 @@ contract HarmonyBridge is VersionedInitializable {
         address payable _ethereumReceiver,
         address _token,
         uint256 _amount
-    ) public isActive   {
-
-        Valset valset = Valset(bridgeRegistry.getValset());
-        BridgeBank bridgeBank = BridgeBank(bridgeRegistry.getBridgeBank());
+    ) public isActive {
 
         require(
             valset.isActiveValidator(msg.sender),
@@ -119,7 +123,7 @@ contract HarmonyBridge is VersionedInitializable {
         isPending(_unlockID)
     {
         require(
-            msg.sender == bridgeRegistry.getOracle(),
+            msg.sender == address(oracle),
             "Only the Oracle may complete prophecies"
         );
 
@@ -132,7 +136,6 @@ contract HarmonyBridge is VersionedInitializable {
 
     function unlockTokens(uint256 _unlockID) internal {
         UnlockClaim memory unlockClaim = unlockClaims[_unlockID];
-        BridgeBank bridgeBank = BridgeBank(bridgeRegistry.getBridgeBank());
 
         if (unlockClaim.token == bridgeBank.ETHAddress()){
             bridgeBank.unlockETH(
@@ -157,7 +160,6 @@ contract HarmonyBridge is VersionedInitializable {
         view
         returns (bool)
     {
-        Valset valset = Valset(bridgeRegistry.getValset());
         return
             valset.isActiveValidator(unlockClaims[_unlockID].originalValidator);
     }

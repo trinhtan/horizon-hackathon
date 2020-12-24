@@ -7,16 +7,10 @@ contract BridgeRegistry {
     address public valset;
     address public operator;
 
-    event LogContractsRegistered(
-        address _harmonyBridge,
-        address _bridgeBank,
-        address _oracle,
-        address _valset
-    );
-
     event LogBridgeBankSet(address _bridgeBank);
     event LogOracleSet(address _oracle);
-
+    event LogHarmonyBridgeSet(address _harmonyBridge);
+    event LogValsetSet(address _valset);
 
     modifier onlyOperator() {
         require(msg.sender == operator, "Must be the operator.");
@@ -33,6 +27,7 @@ contract BridgeRegistry {
 
     function setHarmonyBridge(address _harmonyBridge) public onlyOperator {
         harmonyBridge = _harmonyBridge;
+        emit LogHarmonyBridgeSet(_harmonyBridge);
     }
 
     function getHarmonyBridge() public view returns(address) {
@@ -59,6 +54,7 @@ contract BridgeRegistry {
 
      function setValset(address _valset) public onlyOperator {
         valset = _valset;
+        emit LogValsetSet(_valset);
     }
 
     function getValset() public view returns(address) {

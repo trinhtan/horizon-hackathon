@@ -16,6 +16,8 @@ contract Oracle is VersionedInitializable {
     mapping(uint256 => address[]) public oracleClaimValidators;
     mapping(uint256 => mapping(address => bool)) public hasMadeClaim;
     BridgeRegistry public bridgeRegistry;
+    Valset public valset;
+    HarmonyBridge public harmonyBridge;
 
     event LogNewOracleClaim(
         uint256 _unlockID,
@@ -37,7 +39,6 @@ contract Oracle is VersionedInitializable {
     }
 
     modifier onlyValidator() {
-        Valset valset = Valset(bridgeRegistry.getValset());
         require(
             valset.isActiveValidator(msg.sender),
             "Must be an active validator"
@@ -46,7 +47,6 @@ contract Oracle is VersionedInitializable {
     }
 
     modifier isPending(uint256 _unlockID) {
-        HarmonyBridge harmonyBridge = HarmonyBridge(bridgeRegistry.getHarmonyBridge());
         require(
             harmonyBridge.isUnlockClaimActive(_unlockID) == true,
             "The unlock must be pending for this operation"
@@ -57,7 +57,7 @@ contract Oracle is VersionedInitializable {
     function initialize(
         address _bridgeRegistry,
         uint256 _consensusThreshold
-    ) payable public initializer {
+    ) public initializer {
         require(
             _consensusThreshold > 0,
             "Consensus threshold must be positive."
@@ -65,6 +65,8 @@ contract Oracle is VersionedInitializable {
 
         bridgeRegistry = BridgeRegistry(_bridgeRegistry);
         operator = bridgeRegistry.getOperator();
+        valset = Valset(bridgeRegistry.getValset());
+        harmonyBridge = HarmonyBridge(bridgeRegistry.getHarmonyBridge());
         consensusThreshold = _consensusThreshold;
     }
 
@@ -78,7 +80,6 @@ contract Oracle is VersionedInitializable {
         bytes memory _signature
     ) public onlyValidator isPending(_unlockID) {
         address validatorAddress = msg.sender;
-        Valset valset = Valset(bridgeRegistry.getValset());
 
         require(
             validatorAddress == valset.recover(_message, _signature),
@@ -156,7 +157,6 @@ contract Oracle is VersionedInitializable {
             uint256
         )
     {
-        HarmonyBridge harmonyBridge = HarmonyBridge(bridgeRegistry.getHarmonyBridge());
         require(
             harmonyBridge.isUnlockClaimActive(_unlockID) == true,
             "Can only check active prophecies"
@@ -173,7 +173,6 @@ contract Oracle is VersionedInitializable {
             uint256
         )
     {
-        Valset valset = Valset(bridgeRegistry.getValset());
         uint256 signedPower = 0;
         uint256 totalPower = valset.totalPower();
 
@@ -200,7 +199,6 @@ contract Oracle is VersionedInitializable {
     }
 
     function completeUnlock(uint256 _unlockID) internal {
-        HarmonyBridge harmonyBridge = HarmonyBridge(bridgeRegistry.getHarmonyBridge());
         harmonyBridge.completeUnlockClaim(_unlockID);
     }
 }
