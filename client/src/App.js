@@ -11,7 +11,7 @@ import SwapPage from 'pages/SwapPage';
 
 function App() {
   // useEffect(() => {
-  //   connectOneWallet();
+  //   // connectOneWallet();
   //   connectMetamask();
   // });
 
