@@ -5,7 +5,7 @@
 import detectEthereumProvider from '@metamask/detect-provider';
 import Web3 from 'web3';
 import store from 'store';
-import { setAddress } from 'store/eth/action.js';
+import { setAddress, setChainId, setWeb3 } from 'store/eth/action.js';
 // import { notification } from 'antd';
 
 // const openNotification = (message, description) => {
@@ -22,10 +22,13 @@ export const connectMetamask = async isSender => {
   const provider = await detectEthereumProvider();
   const ethereum = window.ethereum;
   const web3 = new Web3(window.ethereum);
-  let network = await web3.eth.net.getNetworkType();
-  if (network !== 'kovan') {
+  let chainId = await web3.eth.net.getId();
+
+  if (chainId === 42) {
     // openNotification('Network fail', 'Please change to Ropsten testnet');
-    return;
+    store.dispatch(setChainId(chainId));
+  } else {
+    alert('Please change to Kovan testnet!');
   }
   if (provider) {
     startApp(provider); // Initialize your app
@@ -40,7 +43,7 @@ export const connectMetamask = async isSender => {
       console.error('Do you have multiple wallets installed?');
     } else {
       const web3 = new Web3(window.ethereum);
-      //   store.dispatch(setWeb3(web3));
+      store.dispatch(setWeb3(web3));
       connect();
     }
     // Access the decentralized web!
