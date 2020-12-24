@@ -14,12 +14,14 @@ import "../Oracle.sol";
 contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     using SafeMath for uint256;
 
-    address public operator;
+    uint256 public constant BRIDGEBANK_REVISION = 0x1;
     uint256 public feeNumerator;
     uint256 public feeDenominator;
     uint256 public SAFE_NUMBER = 1e12;
-    address public WETH;
     uint256 public lockNonce;
+
+    address public operator;
+    address public WETH;
     address public ETHAddress = address(
         0x1111111111111111111111111111111111111111
     );
@@ -117,7 +119,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         address _wethGateway,
         address _weth,
         address _harmonyWETH
-    ) public initializer {
+    ) payable public initializer {
         operator = _operatorAddress;
         oracle = Oracle(_oracleAddress);
         harmonyBridge = HarmonyBridge(_harmonyBridgeAddress);
@@ -126,16 +128,12 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         wethGateway = IWETHGateway(_wethGateway);
         WETH = _weth;
         lockNonce = 0;
-        tokensData[ETHAddress].harmonyMappedToken = _harmonyWETH;
-        tokensData[ETHAddress].lockedFund = 0;
-        tokensData[ETHAddress].isActive = true;
 
+        addDataTokenInternal(tokensData[ETHAddress], msg.value, _harmonyWETH);
         DataTypes.ReserveData memory reserve = lendingPool.getReserveData(WETH);
         address aToken = reserve.aTokenAddress;
         IERC20(aToken).approve(address(wethGateway), uint256(-1));
     }
-
-    uint256 public constant BRIDGEBANK_REVISION = 0x1;
 
     function getRevision() internal pure returns (uint256) {
         return BRIDGEBANK_REVISION;
@@ -143,7 +141,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
 
     function() external payable onlyOperator {}
 
-    function addToken(address _ethereumToken, address _harmonyToken) public onlyOperator {
+    function addToken(address _ethereumToken, uint256 _ethereumTokenAmount, address _harmonyToken) public onlyOperator {
         require(
             _ethereumToken != address(0) && _harmonyToken != address(0),
             "Token address must be valid"
@@ -151,7 +149,9 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
 
         require(tokensData[_ethereumToken].harmonyMappedToken == address(0), "Token already added!");
 
-        addDataTokenInternal(tokensData[_ethereumToken], _harmonyToken);
+        IERC20(_ethereumToken).transferFrom(msg.sender, address(this), _ethereumTokenAmount);
+
+        addDataTokenInternal(tokensData[_ethereumToken], _ethereumTokenAmount, _harmonyToken);
 
         IERC20(_ethereumToken).approve(
             address(lendingPool),
@@ -159,10 +159,10 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         );
     }
 
-    function addDataTokenInternal(TokenData storage data, address _harmonyToken)
+    function addDataTokenInternal(TokenData storage data, uint256 _ethereumTokenAmount , address _harmonyToken)
         internal
     {
-        data.lockedFund = 0;
+        data.lockedFund = _ethereumTokenAmount;
         data.harmonyMappedToken = _harmonyToken;
         data.isActive = true;
     }
@@ -465,7 +465,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     {
         require(tokensData[_ethereumToken].harmonyMappedToken != address(0), "Invalid token address");
 
-        require(_ethereumTokenAmount <= getTotalERC20Balance(_ethereumToken) - tokensData[_ethereumToken].lockedFund,
+        require(_ethereumTokenAmount <= getTotalERC20Balance(_ethereumToken),
             "Exceeded amount of Token allowed to withdraw"
         );
 
@@ -487,7 +487,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         amountMustGreaterThanZero(_amountETH)
         receiverMustBeValid(_ethereumReceiver)
     {
-        require(_amountETH <= getTotalETHBalance() - tokensData[ETHAddress].lockedFund,
+        require(_amountETH <= getTotalETHBalance(),
             "Exceeded amount of ETH allowed to withdraw"
         );
 

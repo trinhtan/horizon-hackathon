@@ -1,8 +1,10 @@
 pragma solidity ^0.5.0;
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./libraries/openzeppelin-upgradeability/VersionedInitializable.sol";
+import "./BridgeRegistry.sol";
 
-contract Valset {
+contract Valset is VersionedInitializable {
     using SafeMath for uint256;
 
     /*
@@ -12,6 +14,8 @@ contract Valset {
     uint256 public totalPower;
     uint256 public currentValsetVersion;
     uint256 public validatorCount;
+    uint256 public constant VALSET_REVISION = 0x1;
+
     mapping(bytes32 => bool) public validators;
     mapping(bytes32 => uint256) public powers;
 
@@ -62,18 +66,18 @@ contract Valset {
         _;
     }
 
-    /*
-     * @dev: Constructor
-     */
-    constructor(
-        address _operator,
+    function initialize(
+        address _bridgeRegistry,
         address[] memory _initValidators,
         uint256[] memory _initPowers
-    ) public {
-        operator = _operator;
+    ) payable public initializer {
+        operator = BridgeRegistry(_bridgeRegistry).getOperator();
         currentValsetVersion = 0;
-
         updateValset(_initValidators, _initPowers);
+    }
+
+    function getRevision() internal pure returns (uint256) {
+        return VALSET_REVISION;
     }
 
     function recover(bytes32 _message, bytes memory _signature)
