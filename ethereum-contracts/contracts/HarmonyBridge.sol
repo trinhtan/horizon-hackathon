@@ -1,21 +1,21 @@
 pragma solidity ^0.5.0;
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./Valset.sol";
+import "./libraries/openzeppelin-upgradeability/VersionedInitializable.sol";
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "./BridgeBank/BridgeBank.sol";
 
-contract HarmonyBridge {
+import "./Valset.sol";
+import "./BridgeBank/BridgeBank.sol";
+import "./BridgeRegistry.sol";
+
+contract HarmonyBridge is VersionedInitializable {
     using SafeMath for uint256;
 
-    address public operator;
-    address public oracle;
-    bool public hasOracle;
-    bool public hasBridgeBank;
-    uint256 public unlockClaimCount;
+    BridgeRegistry public bridgeRegistry;
 
-    Valset public valset;
-    BridgeBank public bridgeBank;
+    uint256 public constant HARMONYBRIDGE_REVISION = 0x1;
+    uint256 public unlockClaimCount;
+    address public operator;
 
     mapping(uint256 => UnlockClaim) public unlockClaims;
 
@@ -29,10 +29,6 @@ contract HarmonyBridge {
         uint256 amount;
         Status status;
     }
-
-    event LogOracleSet(address _oracle);
-
-    event LogBridgeBankSet(address _bridgeBank);
 
     event LogNewUnlockClaim(
         uint256 _unlockID,
@@ -57,42 +53,22 @@ contract HarmonyBridge {
 
     modifier isActive() {
         require(
-            hasOracle == true && hasBridgeBank == true,
+            bridgeRegistry.getOracle() != address(0) && bridgeRegistry.getBridgeBank() != address(0),
             "The Operator must set the oracle and bridge bank for bridge activation"
         );
         _;
     }
 
-    constructor(address _operator, address _valset) public {
+    function initialize(
+        address _bridgeRegistry
+    ) payable public initializer {
+        bridgeRegistry = BridgeRegistry(_bridgeRegistry);
+        operator = bridgeRegistry.getOperator();
         unlockClaimCount = 0;
-        operator = _operator;
-        valset = Valset(_valset);
-        hasOracle = false;
-        hasBridgeBank = false;
     }
 
-    function setOracle(address _oracle) public onlyOperator {
-        require(
-            !hasOracle,
-            "The Oracle cannot be updated once it has been set"
-        );
-
-        hasOracle = true;
-        oracle = _oracle;
-
-        emit LogOracleSet(oracle);
-    }
-
-    function setBridgeBank(address payable _bridgeBank) public onlyOperator {
-        require(
-            !hasBridgeBank,
-            "The Bridge Bank cannot be updated once it has been set"
-        );
-
-        hasBridgeBank = true;
-        bridgeBank = BridgeBank(_bridgeBank);
-
-        emit LogBridgeBankSet(address(bridgeBank));
+    function getRevision() internal pure returns (uint256) {
+        return HARMONYBRIDGE_REVISION;
     }
 
     function newUnlockClaim(
@@ -100,7 +76,11 @@ contract HarmonyBridge {
         address payable _ethereumReceiver,
         address _token,
         uint256 _amount
-    ) public isActive {
+    ) public isActive   {
+
+        Valset valset = Valset(bridgeRegistry.getValset());
+        BridgeBank bridgeBank = BridgeBank(bridgeRegistry.getBridgeBank());
+
         require(
             valset.isActiveValidator(msg.sender),
             "Must be an active validator"
@@ -139,7 +119,7 @@ contract HarmonyBridge {
         isPending(_unlockID)
     {
         require(
-            msg.sender == oracle,
+            msg.sender == bridgeRegistry.getOracle(),
             "Only the Oracle may complete prophecies"
         );
 
@@ -152,6 +132,7 @@ contract HarmonyBridge {
 
     function unlockTokens(uint256 _unlockID) internal {
         UnlockClaim memory unlockClaim = unlockClaims[_unlockID];
+        BridgeBank bridgeBank = BridgeBank(bridgeRegistry.getBridgeBank());
 
         if (unlockClaim.token == bridgeBank.ETHAddress()){
             bridgeBank.unlockETH(
@@ -176,6 +157,7 @@ contract HarmonyBridge {
         view
         returns (bool)
     {
+        Valset valset = Valset(bridgeRegistry.getValset());
         return
             valset.isActiveValidator(unlockClaims[_unlockID].originalValidator);
     }
