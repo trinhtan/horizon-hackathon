@@ -1,29 +1,104 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Row, Col, Input, Select } from 'antd';
+import { tokens } from 'constant/support';
+import WalletsETH from 'components/WalletsETH';
+import WalletsHmy from 'components/WalletsHmy';
+import {
+  RightOutlined,
+  ArrowRightOutlined,
+  ArrowDownOutlined,
+  SwapOutlined
+} from '@ant-design/icons';
 
 import './style.scss';
 
-import { Row, Col, Input, Select } from 'antd';
-import { RightOutlined, ArrowRightOutlined, ArrowDownOutlined } from '@ant-design/icons';
-
 const { Option } = Select;
 
+const listWallets = {
+  ETH: <WalletsETH />,
+  ONE: <WalletsHmy />
+};
+
 function SwapPage() {
-  const [roadSwap, setRoadSwap] = useState(0);
+  const addressETH = useSelector(state => state.eth.address);
+  const addressHmy = useSelector(state => state.hmy.address);
 
-  function onChange(value) {
-    console.log(`selected ${value}`);
+  const listAddressDest = useMemo(() => {
+    return { 1: addressETH, 0: addressHmy };
+  }, [addressETH, addressHmy]);
+
+  const [indexRoadSwap, setIndexRoadSwap] = useState(0);
+  const [enanbleBtnSwap, setEnanbleBtnSwap] = useState(false);
+  const [amountSource, setAmountSource] = useState();
+  const [tokenSource, setTokenSource] = useState();
+  const [tokenDest, setTokenDest] = useState();
+  const [walletSource, setWalletSource] = useState('ETH');
+  const [walletDest, setWalletDest] = useState('ONE');
+  const [addressDest, setAddressDest] = useState();
+  const [toAddress, setToAddress] = useState();
+
+  useEffect(() => {
+    setAddressDest(listAddressDest[indexRoadSwap]);
+    setToAddress(listAddressDest[indexRoadSwap]);
+  }, [listAddressDest, indexRoadSwap, addressDest]);
+
+  function reverseDirectionToken() {
+    setTokenSource(tokenDest);
+    setTokenDest(tokenSource);
   }
 
-  function onBlur() {
-    console.log('blur');
+  function onChangeTokenSource(value) {
+    setTokenSource(value);
+    if (value === tokenDest) {
+      setTokenDest();
+    }
   }
 
-  function onFocus() {
-    console.log('focus');
+  function onChangeTokenDest(value) {
+    setTokenDest(value);
+    if (value === tokenSource) {
+      setTokenSource();
+    }
   }
 
-  function onSearch(val) {
-    console.log('search:', val);
+  const onChangeAddressTo = e => {
+    const { value } = e.target;
+    setToAddress(value);
+  };
+
+  const onBlurAddressTo = e => {
+    const { value } = e.target;
+    setToAddress(value);
+  };
+
+  const onChangeFormatNumber = e => {
+    const { value } = e.target;
+    const reg = /^-?\d*(\.\d*)?$/;
+    if ((!isNaN(value) && reg.test(value)) || value === '') {
+      setAmountSource(value);
+    }
+  };
+
+  const chooseRoad = (from, to, index) => {
+    setIndexRoadSwap(index);
+    setWalletSource(from);
+    setWalletDest(to);
+    setAddressDest(listAddressDest[index]);
+    setToAddress(listAddressDest[index]);
+  };
+
+  const onBlurFormatNumber = e => {
+    const { value } = e.target;
+    let valueTemp = value;
+    if (value.charAt(value.length - 1) === '.') {
+      valueTemp = value.slice(0, -1);
+    }
+    setAmountSource(valueTemp.replace(/0*(\d+)/, '$1'));
+  };
+
+  function setMyAdress() {
+    setToAddress(addressDest);
   }
 
   return (
@@ -34,60 +109,110 @@ function SwapPage() {
             <div className='input-and-select-token'>
               <div className='token-source-dest'>
                 <div className='label-input-token'>
-                  <div class='sc-hSdWYo euiRCS css-1rhdhic'>From</div>
+                  <div className='sc-hSdWYo euiRCS css-1rhdhic'>From</div>
                 </div>
                 <div className='box-input-token'>
-                  <Input size='large' placeholder='0.0' className='input-token' />
+                  <Input
+                    size='large'
+                    placeholder='0.0'
+                    className='input-token'
+                    onChange={e => onChangeFormatNumber(e)}
+                    onBlur={e => onBlurFormatNumber(e)}
+                    value={amountSource}
+                  />
                   <Select
+                    value={tokenSource}
+                    style={{ width: 150 }}
                     showSearch
                     placeholder='Select a token'
                     optionFilterProp='children'
-                    onChange={onChange}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                    onSearch={onSearch}
+                    onChange={onChangeTokenSource}
                     filterOption={(input, option) =>
-                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      option.children[1].toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }
                     className='button-select-token'
                   >
-                    <Option value='jack'>Jack</Option>
-                    <Option value='lucy'>Lucy</Option>
-                    <Option value='tom'>Tom</Option>
+                    {tokens.map((token, i) => {
+                      return (
+                        <Option value={token.symbol} key={i}>
+                          <img
+                            alt='icon-token'
+                            src={token.icon}
+                            className='img-icon-token-select-option'
+                          />
+                          {token.symbol}
+                        </Option>
+                      );
+                    })}
                   </Select>
                 </div>
               </div>
               <div className='symbol-arrow-down'>
-                <ArrowDownOutlined />
+                <ArrowDownOutlined
+                  className='icon'
+                  onClick={() => {
+                    reverseDirectionToken();
+                  }}
+                />
               </div>
               <div className='token-source-dest'>
                 <div className='label-input-token'>
-                  <div class='sc-hSdWYo euiRCS css-1rhdhic'>To</div>
+                  <div className='sc-hSdWYo euiRCS css-1rhdhic'>To</div>
                 </div>
                 <div className='box-input-token'>
-                  <Input size='large' placeholder='0.0' className='input-token' />
+                  <Input size='large' placeholder='0.0' className='input-token' disabled />
                   <Select
+                    value={tokenDest}
+                    style={{ width: 150 }}
                     showSearch
                     placeholder='Select a token'
                     optionFilterProp='children'
-                    onChange={onChange}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                    onSearch={onSearch}
+                    onChange={onChangeTokenDest}
                     filterOption={(input, option) =>
                       option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }
                     className='button-select-token'
                   >
-                    <Option value='jack'>Jack</Option>
-                    <Option value='lucy'>Lucy</Option>
-                    <Option value='tom'>Tom</Option>
+                    {tokens.map((token, i) => {
+                      return (
+                        <Option value={token.symbol} key={i}>
+                          <img
+                            alt='icon-token'
+                            src={token.icon}
+                            className='img-icon-token-select-option'
+                          />
+                          {token.symbol}
+                        </Option>
+                      );
+                    })}
                   </Select>
                 </div>
               </div>
+              <div>
+                <div className='label-input-token'>
+                  <div className='sc-hSdWYo euiRCS css-1rhdhic'>To Address</div>
+                </div>
+                <div className='box-input-token'>
+                  <Input
+                    size='large'
+                    placeholder='address...'
+                    className='input-token'
+                    value={toAddress}
+                    onChange={e => onChangeAddressTo(e)}
+                    onBlur={e => onBlurAddressTo(e)}
+                  />
+                </div>
+                {addressDest ? (
+                  <div className='button-use-my-address' onClick={() => setMyAdress()}>
+                    Use my address
+                  </div>
+                ) : null}
+              </div>
               <div className='button-swap'>
-                <button id='swap-button' class='swap-button'>
-                  <div class='css-10ob8xa'>Swap Anyway</div>
+                <button disabled={enanbleBtnSwap} id='swap-button' className='swap-button'>
+                  <div className='css-10ob8xa'>
+                    <SwapOutlined /> Swap Anyway
+                  </div>
                 </button>
               </div>
             </div>
@@ -99,10 +224,11 @@ function SwapPage() {
               <Col
                 span={11}
                 className={
-                  'eth-to-harmony button-chain ' + (roadSwap === 0 ? 'enable-road' : 'disable-road')
+                  'eth-to-harmony button-chain ' +
+                  (indexRoadSwap === 0 ? 'enable-road' : 'disable-road')
                 }
                 onClick={() => {
-                  setRoadSwap(0);
+                  chooseRoad('ETH', 'ONE', 0);
                 }}
               >
                 <Row>
@@ -131,10 +257,11 @@ function SwapPage() {
               <Col
                 span={11}
                 className={
-                  'harmony-to-eth button-chain ' + (roadSwap === 1 ? 'enable-road' : 'disable-road')
+                  'harmony-to-eth button-chain ' +
+                  (indexRoadSwap === 1 ? 'enable-road' : 'disable-road')
                 }
                 onClick={() => {
-                  setRoadSwap(1);
+                  chooseRoad('ONE', 'ETH', 1);
                 }}
               >
                 <Row>
@@ -167,20 +294,7 @@ function SwapPage() {
                       <div className='text-source-dest'>
                         <h2>Wallet Source</h2>
                       </div>
-                      <Row justify='center' className='list-wallets'>
-                        <Col>
-                          <div className='info-wallet'>
-                            <img alt='icon' className='icon-wallet' src='/metamask.png' />
-                            <h4>Metamask</h4>
-                          </div>
-                        </Col>
-                        <Col>
-                          <div className='info-wallet'>
-                            <img alt='icon' className='icon-wallet' src='/trust.png' />
-                            <h4>Trust</h4>
-                          </div>
-                        </Col>
-                      </Row>
+                      {listWallets[walletSource]}
                     </div>
                   </Col>
                   <Col span={2} className='symbol-arrow-wallet'>
@@ -191,14 +305,7 @@ function SwapPage() {
                       <div className='text-source-dest'>
                         <h2>Wallet Dest</h2>
                       </div>
-                      <Row justify='center' className='list-wallets'>
-                        <Col>
-                          <div className='info-wallet'>
-                            <img alt='icon' className='icon-wallet' src='/trust.png' />
-                            <h4>Trust</h4>
-                          </div>
-                        </Col>
-                      </Row>
+                      {listWallets[walletDest]}
                     </div>
                   </Col>
                 </Row>
