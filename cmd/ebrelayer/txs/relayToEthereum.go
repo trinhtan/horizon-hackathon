@@ -61,7 +61,7 @@ const (
 
 // RelayOracleClaimToEthereum relays the provided OracleClaim to Oracle contract on the Ethereum network
 func RelayOracleClaimToEthereum(provider string, contractAddress common.Address, event types.Event,
-	claim OracleClaim, key *ecdsa.PrivateKey) error {
+	claim EthOracleClaim, key *ecdsa.PrivateKey) error {
 	// Initialize client service, validator's tx auth, and target contract address
 	client, auth, target := initRelayConfig(provider, contractAddress, event, key)
 
@@ -134,14 +134,14 @@ func initRelayConfig(provider string, registry common.Address, event types.Event
 	// case types.MsgBurn, types.MsgLock:
 	// 	targetContract = HarmonyBridge
 	// // OracleClaims are sent to the Oracle contract
-	case types.LogNewUnlockClaim:
+	case types.EthLogNewUnlockClaim:
 		targetContract = Oracle
 	default:
 		panic("invalid target contract address")
 	}
 
 	// Get the specific contract's address
-	target, err := GetAddressFromBridgeRegistry(client, registry, targetContract)
+	target, err := EthGetAddressFromBridgeRegistry(client, registry, targetContract)
 	if err != nil {
 		log.Fatal(err)
 	}

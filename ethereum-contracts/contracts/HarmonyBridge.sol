@@ -34,7 +34,7 @@ contract HarmonyBridge is VersionedInitializable {
         Status status;
     }
 
-    event LogNewUnlockClaim(
+    event EthLogNewUnlockClaim(
         uint256 _unlockID,
         address _harmonySender,
         address payable _ethereumReceiver,
@@ -43,7 +43,7 @@ contract HarmonyBridge is VersionedInitializable {
         uint256 _amount
     );
 
-    event LogUnlockCompleted(uint256 _unlockID);
+    event EthLogUnlockCompleted(uint256 _unlockID);
 
     modifier isPending(uint256 _unlockID) {
         require(isUnlockClaimActive(_unlockID), "Unlock claim is not active");
@@ -108,7 +108,7 @@ contract HarmonyBridge is VersionedInitializable {
         unlockClaimCount = unlockClaimCount.add(1);
         unlockClaims[unlockClaimCount] = unlockClaim;
 
-        emit LogNewUnlockClaim(
+        emit EthLogNewUnlockClaim(
             unlockClaimCount,
             _harmonySender,
             _ethereumReceiver,
@@ -131,7 +131,7 @@ contract HarmonyBridge is VersionedInitializable {
 
         unlockTokens(_unlockID);
 
-        emit LogUnlockCompleted(_unlockID);
+        emit EthLogUnlockCompleted(_unlockID);
     }
 
     function unlockTokens(uint256 _unlockID) internal {

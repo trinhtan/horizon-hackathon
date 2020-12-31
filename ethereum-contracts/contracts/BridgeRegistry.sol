@@ -7,10 +7,10 @@ contract BridgeRegistry {
     address public valset;
     address public operator;
 
-    event LogBridgeBankSet(address _bridgeBank);
-    event LogOracleSet(address _oracle);
-    event LogHarmonyBridgeSet(address _harmonyBridge);
-    event LogValsetSet(address _valset);
+    event EthLogBridgeBankSet(address _bridgeBank);
+    event EthLogOracleSet(address _oracle);
+    event EthLogHarmonyBridgeSet(address _harmonyBridge);
+    event EthLogValsetSet(address _valset);
 
     modifier onlyOperator() {
         require(msg.sender == operator, "Must be the operator.");
@@ -27,7 +27,7 @@ contract BridgeRegistry {
 
     function setHarmonyBridge(address _harmonyBridge) public onlyOperator {
         harmonyBridge = _harmonyBridge;
-        emit LogHarmonyBridgeSet(_harmonyBridge);
+        emit EthLogHarmonyBridgeSet(_harmonyBridge);
     }
 
     function getHarmonyBridge() public view returns(address) {
@@ -36,7 +36,7 @@ contract BridgeRegistry {
 
     function setBridgeBank(address payable _bridgeBank) public onlyOperator {
         bridgeBank = _bridgeBank;
-        emit LogBridgeBankSet(address(bridgeBank));
+        emit EthLogBridgeBankSet(address(bridgeBank));
     }
 
     function getBridgeBank() public view returns(address payable) {
@@ -45,7 +45,7 @@ contract BridgeRegistry {
 
     function setOracle(address _oracle) public onlyOperator {
         oracle = _oracle;
-        emit LogOracleSet(oracle);
+        emit EthLogOracleSet(oracle);
     }
 
     function getOracle() public view returns(address) {
@@ -54,7 +54,7 @@ contract BridgeRegistry {
 
      function setValset(address _valset) public onlyOperator {
         valset = _valset;
-        emit LogValsetSet(_valset);
+        emit EthLogValsetSet(_valset);
     }
 
     function getValset() public view returns(address) {

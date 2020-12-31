@@ -14,9 +14,9 @@ const (
 	nullAddress = "0x0000000000000000000000000000000000000000"
 )
 
-// ProphecyClaimToSignedOracleClaim packages and signs a prophecy claim's data, returning a new oracle claim
-func ProphecyClaimToSignedOracleClaim(event types.EthereumLogNewUnlockClaimEvent, key *ecdsa.PrivateKey) (OracleClaim, error) {
-	oracleClaim := OracleClaim{}
+// UnlockClaimToSignedOracleClaim packages and signs a unlock claim's data, returning a new oracle claim
+func UnlockClaimToSignedOracleClaim(event types.EthLogNewUnlockClaimEvent, key *ecdsa.PrivateKey) (EthOracleClaim, error) {
+	oracleClaim := EthOracleClaim{}
 
 	// Generate a hashed claim message which contains ProphecyClaim's data
 	fmt.Println("Generating unique message for UnlockClaim", event.UnlockID)
