@@ -9,7 +9,7 @@ import walletconnect from 'assets/LogoWallets/walletconnect.png';
 export const tokens = [
   { symbol: 'ETH', icon: eth },
   { symbol: 'DAI', icon: dai },
-  { symbol: 'Link', icon: link },
+  { symbol: 'LINK', icon: link },
   { symbol: 'ONE', icon: one }
 ];
 

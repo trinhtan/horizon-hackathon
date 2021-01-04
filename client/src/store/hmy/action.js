@@ -1,6 +1,5 @@
-import Web3 from 'web3';
 import { Harmony } from '@harmony-js/core';
-import { ChainID, ChainType, fromWei, hexToNumber, Units } from '@harmony-js/utils';
+import { ChainID, ChainType } from '@harmony-js/utils';
 
 import WalletConnectProvider from '@walletconnect/web3-provider';
 
