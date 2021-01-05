@@ -23,7 +23,7 @@ export const connectMetamask = async isSender => {
   const ethereum = window.ethereum;
   const web3 = new Web3(window.ethereum);
   let chainId = await web3.eth.net.getId();
-
+  console.log('chainid', chainId, chainId === 56);
   if (chainId === 42) {
     // openNotification('Network fail', 'Please change to Ropsten testnet');
     store.dispatch(setChainId(chainId));
