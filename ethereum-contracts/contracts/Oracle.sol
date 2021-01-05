@@ -19,14 +19,14 @@ contract Oracle is VersionedInitializable {
     Valset public valset;
     HarmonyBridge public harmonyBridge;
 
-    event LogNewOracleClaim(
+    event EthLogNewOracleClaim(
         uint256 _unlockID,
         bytes32 _message,
         address _validatorAddress,
         bytes _signature
     );
 
-    event LogUnlockProcessed(
+    event EthLogUnlockProcessed(
         uint256 _unlockID,
         uint256 _prophecyPowerCurrent,
         uint256 _prophecyPowerThreshold,
@@ -94,7 +94,7 @@ contract Oracle is VersionedInitializable {
         hasMadeClaim[_unlockID][validatorAddress] = true;
         oracleClaimValidators[_unlockID].push(validatorAddress);
 
-        emit LogNewOracleClaim(
+        emit EthLogNewOracleClaim(
             _unlockID,
             _message,
             validatorAddress,
@@ -110,7 +110,7 @@ contract Oracle is VersionedInitializable {
         if (valid) {
             completeUnlock(_unlockID);
 
-            emit LogUnlockProcessed(
+            emit EthLogUnlockProcessed(
                 _unlockID,
                 unlockPowerCurrent,
                 unlockPowerThreshold,
@@ -138,7 +138,7 @@ contract Oracle is VersionedInitializable {
         // Update the BridgeClaim's status
         completeUnlock(_unlockID);
 
-        emit LogUnlockProcessed(
+        emit EthLogUnlockProcessed(
             _unlockID,
             unlockPowerCurrent,
             unlockPowerThreshold,

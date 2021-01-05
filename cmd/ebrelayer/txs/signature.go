@@ -54,7 +54,7 @@ func LoadSender() (address common.Address, err error) {
 }
 
 // GenerateClaimMessage Generates a hashed message containing a ProphecyClaim event's data
-func GenerateClaimMessage(event types.EthereumLogNewUnlockClaimEvent) []byte {
+func GenerateClaimMessage(event types.EthLogNewUnlockClaimEvent) []byte {
 	unlockID := solsha3.Int256(event.UnlockID)
 	sender := solsha3.Int256(event.HarmonySender.Hex())
 	recipient := solsha3.Int256(event.EthereumReceiver.Hex())

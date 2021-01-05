@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -25,7 +24,6 @@ import (
 
 // EthereumSub is an Ethereum listener that can relay txs to Cosmos and Ethereum
 type EthereumSub struct {
-	Cdc                     *codec.Codec
 	EthProvider             string
 	RegistryContractAddress common.Address
 	ValidatorName           string
@@ -34,12 +32,9 @@ type EthereumSub struct {
 }
 
 // NewEthereumSub initializes a new EthereumSub
-func NewEthereumSub(inBuf io.Reader, rpcURL string, cdc *codec.Codec, validatorMoniker, chainID,
-	ethProvider string, registryContractAddress common.Address, privateKey *ecdsa.PrivateKey,
-	logger tmLog.Logger) (EthereumSub, error) {
-
+func NewEthereumSub(inBuf io.Reader, validatorMoniker, ethProvider string,
+	registryContractAddress common.Address, privateKey *ecdsa.PrivateKey, logger tmLog.Logger) (EthereumSub, error) {
 	return EthereumSub{
-		Cdc:                     cdc,
 		EthProvider:             ethProvider,
 		RegistryContractAddress: registryContractAddress,
 		ValidatorName:           "validator",
@@ -62,6 +57,7 @@ func (sub EthereumSub) Start() {
 		sub.Logger.Error(err.Error())
 		os.Exit(1)
 	}
+	fmt.Println("Ethereum ChainID: ", clientChainID)
 
 	// We will check logs for new events
 	logs := make(chan ctypes.Log)
@@ -69,12 +65,12 @@ func (sub EthereumSub) Start() {
 	// Start BridgeBank subscription, prepare contract ABI and LockLog event signature
 	bridgeBankAddress, subBridgeBank := sub.startContractEventSub(logs, client, txs.BridgeBank)
 	bridgeBankContractABI := contract.LoadABI(txs.BridgeBank)
-	eventLogLockSignature := bridgeBankContractABI.Events[types.LogLock.String()].Id().Hex()
+	eventLogLockSignature := bridgeBankContractABI.Events[types.EthLogLock.String()].Id().Hex()
 
 	// Start harmonyBridge subscription, prepare contract ABI and LogNewProphecyClaim event signature
 	harmonyBridgeAddress, subHarmonyBridge := sub.startContractEventSub(logs, client, txs.HarmonyBridge)
 	harmonyBridgeContractABI := contract.LoadABI(txs.HarmonyBridge)
-	eventLogNewUnlockClaimSignature := harmonyBridgeContractABI.Events[types.LogNewUnlockClaim.String()].Id().Hex()
+	eventLogNewUnlockClaimSignature := harmonyBridgeContractABI.Events[types.EthLogNewUnlockClaim.String()].Id().Hex()
 
 	for {
 		select {
@@ -89,11 +85,11 @@ func (sub EthereumSub) Start() {
 			var err error
 			switch vLog.Topics[0].Hex() {
 			case eventLogLockSignature:
-				err = sub.handleEthereumLockEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI,
-					types.LogLock.String(), vLog)
+				err = sub.handleEthLockEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI,
+					types.EthLogLock.String(), vLog)
 			case eventLogNewUnlockClaimSignature:
-				err = sub.handleLogNewUnlockClaim(harmonyBridgeAddress, harmonyBridgeContractABI,
-					types.LogNewUnlockClaim.String(), vLog)
+				err = sub.handleEthLogNewUnlockClaim(harmonyBridgeAddress, harmonyBridgeContractABI,
+					types.EthLogNewUnlockClaim.String(), vLog)
 			}
 			// TODO: Check local events store for status, if retryable, attempt relay again
 			if err != nil {
@@ -107,7 +103,7 @@ func (sub EthereumSub) Start() {
 func (sub EthereumSub) startContractEventSub(logs chan ctypes.Log, client *ethclient.Client,
 	contractName txs.ContractRegistry) (common.Address, ethereum.Subscription) {
 	// Get the contract address for this subscription
-	subContractAddress, err := txs.GetAddressFromBridgeRegistry(client, sub.RegistryContractAddress, contractName)
+	subContractAddress, err := txs.EthGetAddressFromBridgeRegistry(client, sub.RegistryContractAddress, contractName)
 	if err != nil {
 		sub.Logger.Error(err.Error())
 	}
@@ -122,15 +118,15 @@ func (sub EthereumSub) startContractEventSub(logs chan ctypes.Log, client *ethcl
 	if err != nil {
 		sub.Logger.Error(err.Error())
 	}
-	sub.Logger.Info(fmt.Sprintf("Subscribed to %v contract at address: %s", contractName, subContractAddress.Hex()))
+	sub.Logger.Info(fmt.Sprintf("Ethereum side - Subscribed to %v contract at address: %s", contractName, subContractAddress.Hex()))
 	return subContractAddress, contractSub
 }
 
-// handleEthereumLockEvent unpacks an Ethereum lock token event, and relays a tx to Harmony
-func (sub EthereumSub) handleEthereumLockEvent(clientChainID *big.Int, contractAddress common.Address,
+// handleEthLockEvent unpacks an Ethereum lock token event, and relays a tx to Harmony
+func (sub EthereumSub) handleEthLockEvent(clientChainID *big.Int, contractAddress common.Address,
 	contractABI abi.ABI, eventName string, cLog ctypes.Log) error {
 	// Parse the event's attributes via contract ABI
-	event := types.EthereumLogLockEvent{}
+	event := types.EthLogLockEvent{}
 	err := contractABI.Unpack(&event, eventName, cLog.Data)
 	if err != nil {
 		sub.Logger.Error("error unpacking: %v", err)
@@ -158,22 +154,22 @@ func (sub EthereumSub) handleEthereumLockEvent(clientChainID *big.Int, contractA
 	// return txs.RelayToCosmos(sub.Cdc, sub.ValidatorName, &prophecyClaim, sub.CliCtx, sub.TxBldr)
 }
 
-// Unpacks a handleLogNewProphecyClaim event, builds a new OracleClaim, and relays it to Ethereum
-func (sub EthereumSub) handleLogNewUnlockClaim(contractAddress common.Address, contractABI abi.ABI,
+// Unpacks a handleEthLogNewUnlockClaim event, builds a new OracleClaim, and relays it to Ethereum
+func (sub EthereumSub) handleEthLogNewUnlockClaim(contractAddress common.Address, contractABI abi.ABI,
 	eventName string, cLog ctypes.Log) error {
 	// Parse the event's attributes via contract ABI
-	event := types.EthereumLogNewUnlockClaimEvent{}
+	event := types.EthLogNewUnlockClaimEvent{}
 	err := contractABI.Unpack(&event, eventName, cLog.Data)
 	if err != nil {
 		sub.Logger.Error("error unpacking: %v", err)
 	}
 	sub.Logger.Info(event.String())
 
-	oracleClaim, err := txs.ProphecyClaimToSignedOracleClaim(event, sub.PrivateKey)
+	oracleClaim, err := txs.UnlockClaimToSignedOracleClaim(event, sub.PrivateKey)
 	if err != nil {
 		return err
 	}
-	return txs.RelayOracleClaimToEthereum(sub.EthProvider, contractAddress, types.LogNewUnlockClaim,
+	return txs.RelayOracleClaimToEthereum(sub.EthProvider, contractAddress, types.EthLogNewUnlockClaim,
 		oracleClaim, sub.PrivateKey)
 	// return nil
 }

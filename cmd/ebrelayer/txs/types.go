@@ -6,15 +6,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// OracleClaim contains data required to make an OracleClaim
-type OracleClaim struct {
+// EthOracleClaim contains data required to make an EthOracleClaim
+type EthOracleClaim struct {
 	UnlockID  *big.Int
 	Message   [32]byte
 	Signature []byte
 }
 
-// UnlockClaim contains data required to make an ProphecyClaim
-type UnlockClaim struct {
+// EthUnlockClaim contains data required to make an ProphecyClaim
+type EthUnlockClaim struct {
 	HarmonySender    common.Address
 	EthereumReceiver common.Address
 	Token            common.Address

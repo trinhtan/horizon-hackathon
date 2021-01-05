@@ -22,7 +22,7 @@ contract Valset is VersionedInitializable {
     /*
      * @dev: Event declarations
      */
-    event LogValidatorAdded(
+    event EthLogValidatorAdded(
         address _validator,
         uint256 _power,
         uint256 _currentValsetVersion,
@@ -30,7 +30,7 @@ contract Valset is VersionedInitializable {
         uint256 _totalPower
     );
 
-    event LogValidatorPowerUpdated(
+    event EthLogValidatorPowerUpdated(
         address _validator,
         uint256 _power,
         uint256 _currentValsetVersion,
@@ -38,7 +38,7 @@ contract Valset is VersionedInitializable {
         uint256 _totalPower
     );
 
-    event LogValidatorRemoved(
+    event EthLogValidatorRemoved(
         address _validator,
         uint256 _power,
         uint256 _currentValsetVersion,
@@ -46,13 +46,13 @@ contract Valset is VersionedInitializable {
         uint256 _totalPower
     );
 
-    event LogValsetReset(
+    event EthLogValsetReset(
         uint256 _newValsetVersion,
         uint256 _validatorCount,
         uint256 _totalPower
     );
 
-    event LogValsetUpdated(
+    event EthLogValsetUpdated(
         uint256 _newValsetVersion,
         uint256 _validatorCount,
         uint256 _totalPower
@@ -123,7 +123,7 @@ contract Valset is VersionedInitializable {
         // Set validator's new power
         powers[key] = _newValidatorPower;
 
-        emit LogValidatorPowerUpdated(
+        emit EthLogValidatorPowerUpdated(
             _validatorAddress,
             _newValidatorPower,
             currentValsetVersion,
@@ -151,7 +151,7 @@ contract Valset is VersionedInitializable {
         delete validators[key];
         delete powers[key];
 
-        emit LogValidatorRemoved(
+        emit EthLogValidatorRemoved(
             _validatorAddress,
             0,
             currentValsetVersion,
@@ -178,7 +178,7 @@ contract Valset is VersionedInitializable {
             addValidatorInternal(_validators[i], _powers[i]);
         }
 
-        emit LogValsetUpdated(currentValsetVersion, validatorCount, totalPower);
+        emit EthLogValsetUpdated(currentValsetVersion, validatorCount, totalPower);
     }
 
     /*
@@ -255,7 +255,7 @@ contract Valset is VersionedInitializable {
         validators[key] = true;
         powers[key] = _validatorPower;
 
-        emit LogValidatorAdded(
+        emit EthLogValidatorAdded(
             _validatorAddress,
             _validatorPower,
             currentValsetVersion,
@@ -272,7 +272,7 @@ contract Valset is VersionedInitializable {
         validatorCount = 0;
         totalPower = 0;
 
-        emit LogValsetReset(currentValsetVersion, validatorCount, totalPower);
+        emit EthLogValsetReset(currentValsetVersion, validatorCount, totalPower);
     }
 
     /**

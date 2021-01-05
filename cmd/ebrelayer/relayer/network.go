@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/trinhtan/horizon-hackathon/hmyclient"
 )
 
 // IsWebsocketURL returns true if the given URL is a websocket URL
@@ -28,6 +29,24 @@ func SetupWebsocketEthClient(ethURL string) (*ethclient.Client, error) {
 	}
 
 	client, err := ethclient.Dial(ethURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+// SetupWebsocketHmyClient returns boolean indicating if a URL is valid websocket ethclient
+func SetupWebsocketHmyClient(hmyURL string) (*hmyclient.Client, error) {
+	if strings.TrimSpace(hmyURL) == "" {
+		return nil, nil
+	}
+
+	if !IsWebsocketURL(hmyURL) {
+		return nil, fmt.Errorf("invalid websocket eth client URL: %s", hmyURL)
+	}
+
+	client, err := hmyclient.Dial(hmyURL)
 	if err != nil {
 		return nil, err
 	}

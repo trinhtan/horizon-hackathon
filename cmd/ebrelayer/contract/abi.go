@@ -17,8 +17,9 @@ import (
 
 // File paths to Ethereum smart contract ABIs
 const (
-	BridgeBankABI    = "/generated/abi/BridgeBank/BridgeBank.abi"
-	HarmonyBridgeABI = "/generated/abi/HarmonyBridge/HarmonyBridge.abi"
+	BridgeBankABI     = "/generated/abi/BridgeBank/BridgeBank.abi"
+	HarmonyBridgeABI  = "/generated/abi/HarmonyBridge/HarmonyBridge.abi"
+	BridgeRegistryABI = "/generated/abi/BridgeRegistry/BridgeRegistry.abi"
 )
 
 // LoadABI loads a smart contract as an abi.ABI
@@ -34,6 +35,8 @@ func LoadABI(contractType txs.ContractRegistry) abi.ABI {
 		filePath = HarmonyBridgeABI
 	case txs.BridgeBank:
 		filePath = BridgeBankABI
+	case txs.BridgeRegistry:
+		filePath = BridgeRegistryABI
 	}
 
 	// Read the file containing the contract's ABI

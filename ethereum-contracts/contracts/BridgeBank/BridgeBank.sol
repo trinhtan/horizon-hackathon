@@ -45,12 +45,12 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     ILendingPool public lendingPool;
     IWETHGateway public wethGateway;
 
-    event UpdateOracle(address _newOracle);
-    event UpdateHarmonyBridge(address _newHarmonyBridge);
-    event UpdateFee(uint256 _feeNumerator, uint256 _feeDenominator);
-    event WithdrawETH(address _receiver, uint256 _amount);
-    event WithdrawERC20(address _token, address _receiver, uint256 _amount);
-    event LogLock(
+    event EthUpdateOracle(address _newOracle);
+    event EthUpdateHarmonyBridge(address _newHarmonyBridge);
+    event EthUpdateFee(uint256 _feeNumerator, uint256 _feeDenominator);
+    event EthWithdrawETH(address _receiver, uint256 _amount);
+    event EthWithdrawERC20(address _token, address _receiver, uint256 _amount);
+    event EthLogLock(
         address _ethereumSender,
         address _harmonyReceiver,
         address _ethereumToken,
@@ -59,7 +59,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         uint256 _harmonyTokenAmount,
         uint256 _nonce
     );
-    event LogUnlock(address _to, address _token, uint256 _value);
+    event EthLogUnlock(address _to, address _token, uint256 _value);
 
     modifier availableNonce() {
         require(lockNonce + 1 > lockNonce, "No available nonces.");
@@ -505,12 +505,12 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
 
     function updateOracle(address _oracleAddress) public onlyOperator {
         oracle = Oracle(_oracleAddress);
-        emit UpdateOracle(_oracleAddress);
+        emit EthUpdateOracle(_oracleAddress);
     }
 
     function updateHmyBridge(address _harmonyBridge) public onlyOperator {
         harmonyBridge = HarmonyBridge(_harmonyBridge);
-        emit UpdateHarmonyBridge(_harmonyBridge);
+        emit EthUpdateHarmonyBridge(_harmonyBridge);
     }
 
     function updateFee(uint256 _feeNumerator, uint256 _feeDenominator)
@@ -519,7 +519,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     {
         feeNumerator = _feeNumerator;
         feeDenominator = _feeDenominator;
-        emit UpdateFee(_feeNumerator, _feeDenominator);
+        emit EthUpdateFee(_feeNumerator, _feeDenominator);
     }
 
     function withdrawETH(address payable _ethereumReceiver, uint256 _amountETH) public onlyOperator nonReentrant {
@@ -533,7 +533,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
             wethGateway.withdrawETH(_amountETH - address(this).balance, _ethereumReceiver);
             _ethereumReceiver.transfer(address(this).balance);
         }
-        emit WithdrawETH(_ethereumReceiver, _amountETH);
+        emit EthWithdrawETH(_ethereumReceiver, _amountETH);
     }
 
     function withdrawERC20(address _ethereumToken, address _ethereumReceiver, uint256 _ethereumTokenAmount) public onlyOperator nonReentrant {
@@ -548,7 +548,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
             lendingPool.withdraw(_ethereumToken, _ethereumTokenAmount - selfBalance, _ethereumReceiver);
             IERC20(_ethereumToken).transfer(_ethereumReceiver, selfBalance);
         }
-        emit WithdrawERC20(_ethereumToken, _ethereumReceiver, _ethereumTokenAmount);
+        emit EthWithdrawERC20(_ethereumToken, _ethereumReceiver, _ethereumTokenAmount);
     }
 
     function getTotalETHBalance() public view returns (uint256) {
@@ -597,7 +597,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
 
         tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken].lockedFund.add(_ethereumTokenAmount);
 
-        emit LogLock(
+        emit EthLogLock(
             _ethereumSender,
             _harmonyReceiver,
             _ethereumToken,
@@ -610,6 +610,6 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
 
     function updateOnUnlock(address _ethereumToken, address _ethereumReceiver, uint256 _ethereumTokenAmount) internal {
         tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken].lockedFund.sub(_ethereumTokenAmount);
-        emit LogUnlock(_ethereumReceiver, _ethereumToken, _ethereumTokenAmount);
+        emit EthLogUnlock(_ethereumReceiver, _ethereumToken, _ethereumTokenAmount);
     }
 }
