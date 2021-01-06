@@ -118,7 +118,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         address _lendingPool,
         address _wethGateway,
         address _weth,
-        address _harmonyWETH
+        address _harmonyETH
     ) payable public initializer {
         bridgeRegistry = BridgeRegistry(_bridgeRegistry);
         operator = bridgeRegistry.getOperator();
@@ -131,7 +131,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         WETH = _weth;
         lockNonce = 0;
 
-        addDataTokenInternal(tokensData[ETHAddress], msg.value, _harmonyWETH);
+        addDataTokenInternal(tokensData[ETHAddress], msg.value, _harmonyETH);
         DataTypes.ReserveData memory reserve = lendingPool.getReserveData(WETH);
         address aToken = reserve.aTokenAddress;
         IERC20(aToken).approve(address(wethGateway), uint256(-1));
@@ -225,12 +225,15 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
             "Contract token allowances insufficient to complete this lock request"
         );
 
-        lendingPool.deposit(
-            _ethereumToken,
-            _ethereumTokenAmount + fee,
-            address(this),
-            0
-        );
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(_ethereumToken);
+        if(reserve.aTokenAddress != address(0)){
+            lendingPool.deposit(
+                _ethereumToken,
+                _ethereumTokenAmount + fee,
+                address(this),
+                0
+            );
+        }
 
         address _harmonyToken = tokensData[_ethereumToken].harmonyMappedToken;
 
@@ -271,7 +274,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         updateOnLock(msg.sender, _harmonyReceiver, ETHAddress, ONEAddress, _amountETH, amountONE);
     }
 
-    function swapETHForWETH(address _harmonyReceiver, uint256 _amountETH)
+    function swapETHForWrappedETH(address _harmonyReceiver, uint256 _amountETH)
         public
         payable
         nonReentrant
@@ -365,12 +368,15 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
             "Contract token allowances insufficient to complete this lock request"
         );
 
-        lendingPool.deposit(
-            _ethereumToken,
-            _ethereumTokenAmount + fee,
-            address(this),
-            0
-        );
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(_ethereumToken);
+        if(reserve.aTokenAddress != address(0)){
+            lendingPool.deposit(
+                _ethereumToken,
+                _ethereumTokenAmount + fee,
+                address(this),
+                0
+            );
+        }
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData(ERC20Detailed(_ethereumToken).symbol(), ERC20Detailed(_destToken).symbol());
@@ -381,7 +387,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         updateOnLock(msg.sender, _harmonyReceiver, _ethereumToken, harmonyToken, _ethereumTokenAmount, harmonyTokenAmount);
     }
 
-    function swapTokenForWETH(
+    function swapTokenForWrappedETH(
         address _harmonyReceiver,
         address _ethereumToken,
         uint256 _ethereumTokenAmount
@@ -403,12 +409,15 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
             "Contract token allowances insufficient to complete this lock request"
         );
 
-        lendingPool.deposit(
-            _ethereumToken,
-            _ethereumTokenAmount + fee,
-            address(this),
-            0
-        );
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(_ethereumToken);
+        if(reserve.aTokenAddress != address(0)){
+            lendingPool.deposit(
+                _ethereumToken,
+                _ethereumTokenAmount + fee,
+                address(this),
+                0
+            );
+        }
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData(ERC20Detailed(_ethereumToken).symbol(), "ETH");
@@ -441,12 +450,15 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
             "Contract token allowances insufficient to complete this lock request"
         );
 
-        lendingPool.deposit(
-            _ethereumToken,
-            _ethereumTokenAmount + fee,
-            address(this),
-            0
-        );
+        DataTypes.ReserveData memory reserve = lendingPool.getReserveData(_ethereumToken);
+        if(reserve.aTokenAddress != address(0)){
+            lendingPool.deposit(
+                _ethereumToken,
+                _ethereumTokenAmount + fee,
+                address(this),
+                0
+            );
+        }
 
         BandOracleInterface.ReferenceData memory data = bandOracleInterface
             .getReferenceData(ERC20Detailed(_ethereumToken).symbol(), "ONE");
@@ -609,7 +621,20 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
     }
 
     function updateOnUnlock(address _ethereumToken, address _ethereumReceiver, uint256 _ethereumTokenAmount) internal {
-        tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken].lockedFund.sub(_ethereumTokenAmount);
+        if(tokensData[_ethereumToken].lockedFund >= _ethereumTokenAmount){
+            tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken].lockedFund.sub(_ethereumTokenAmount);
+        } else {
+            tokensData[_ethereumToken].lockedFund = 0;
+        }
+
         emit EthLogUnlock(_ethereumReceiver, _ethereumToken, _ethereumTokenAmount);
+    }
+
+    function checkUnlockable(address _token, uint256 _amount) public view returns (bool) {
+        if (_token == ETHAddress) {
+            return getTotalETHBalance() >= _amount;
+        } else {
+            return getTotalERC20Balance(_token) >= _amount;
+        }
     }
 }

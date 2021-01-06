@@ -24,33 +24,37 @@ import (
 
 // EthereumSub is an Ethereum listener that can relay txs to Cosmos and Ethereum
 type EthereumSub struct {
-	EthProvider             string
-	RegistryContractAddress common.Address
-	ValidatorName           string
-	PrivateKey              *ecdsa.PrivateKey
-	Logger                  tmLog.Logger
+	EthereumProvider       string
+	HarmonyProvider        string
+	EthereumBridgeRegistry common.Address
+	HarmonyBridgeRegistry  common.Address
+	ValidatorName          string
+	PrivateKey             *ecdsa.PrivateKey
+	Logger                 tmLog.Logger
 }
 
 // NewEthereumSub initializes a new EthereumSub
-func NewEthereumSub(inBuf io.Reader, validatorMoniker, ethProvider string,
-	registryContractAddress common.Address, privateKey *ecdsa.PrivateKey, logger tmLog.Logger) (EthereumSub, error) {
+func NewEthereumSub(inBuf io.Reader, validatorMoniker, ethereumProvider string, harmonyProvider string,
+	ethereumBridgeRegistry common.Address, harmonyBridgeRegistry common.Address, privateKey *ecdsa.PrivateKey, logger tmLog.Logger) (EthereumSub, error) {
 	return EthereumSub{
-		EthProvider:             ethProvider,
-		RegistryContractAddress: registryContractAddress,
-		ValidatorName:           "validator",
-		PrivateKey:              privateKey,
-		Logger:                  logger,
+		EthereumProvider:       ethereumProvider,
+		HarmonyProvider:        harmonyProvider,
+		EthereumBridgeRegistry: ethereumBridgeRegistry,
+		HarmonyBridgeRegistry:  harmonyBridgeRegistry,
+		ValidatorName:          "validator",
+		PrivateKey:             privateKey,
+		Logger:                 logger,
 	}, nil
 }
 
 // Start an Ethereum chain subscription
 func (sub EthereumSub) Start() {
-	client, err := SetupWebsocketEthClient(sub.EthProvider)
+	client, err := SetupWebsocketEthClient(sub.EthereumProvider)
 	if err != nil {
 		sub.Logger.Error(err.Error())
 		os.Exit(1)
 	}
-	sub.Logger.Info("Started Ethereum websocket with provider:", sub.EthProvider)
+	sub.Logger.Info("Started Ethereum websocket with provider:", sub.EthereumProvider)
 
 	clientChainID, err := client.NetworkID(context.Background())
 	if err != nil {
@@ -64,12 +68,12 @@ func (sub EthereumSub) Start() {
 
 	// Start BridgeBank subscription, prepare contract ABI and LockLog event signature
 	bridgeBankAddress, subBridgeBank := sub.startContractEventSub(logs, client, txs.BridgeBank)
-	bridgeBankContractABI := contract.LoadABI(txs.BridgeBank)
+	bridgeBankContractABI := contract.LoadEthereumABI(txs.BridgeBank)
 	eventLogLockSignature := bridgeBankContractABI.Events[types.EthLogLock.String()].Id().Hex()
 
-	// Start harmonyBridge subscription, prepare contract ABI and LogNewProphecyClaim event signature
-	harmonyBridgeAddress, subHarmonyBridge := sub.startContractEventSub(logs, client, txs.HarmonyBridge)
-	harmonyBridgeContractABI := contract.LoadABI(txs.HarmonyBridge)
+	// Start harmonyBridge subscription, prepare contract ABI and EthLogNewUnlockClaim event signature
+	_, subHarmonyBridge := sub.startContractEventSub(logs, client, txs.HarmonyBridge)
+	harmonyBridgeContractABI := contract.LoadEthereumABI(txs.HarmonyBridge)
 	eventLogNewUnlockClaimSignature := harmonyBridgeContractABI.Events[types.EthLogNewUnlockClaim.String()].Id().Hex()
 
 	for {
@@ -85,10 +89,10 @@ func (sub EthereumSub) Start() {
 			var err error
 			switch vLog.Topics[0].Hex() {
 			case eventLogLockSignature:
-				err = sub.handleEthLockEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI,
+				err = sub.handleEthereumLogLockEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI,
 					types.EthLogLock.String(), vLog)
 			case eventLogNewUnlockClaimSignature:
-				err = sub.handleEthLogNewUnlockClaim(harmonyBridgeAddress, harmonyBridgeContractABI,
+				err = sub.handleEthLogNewUnlockClaim(sub.EthereumBridgeRegistry, harmonyBridgeContractABI,
 					types.EthLogNewUnlockClaim.String(), vLog)
 			}
 			// TODO: Check local events store for status, if retryable, attempt relay again
@@ -103,7 +107,7 @@ func (sub EthereumSub) Start() {
 func (sub EthereumSub) startContractEventSub(logs chan ctypes.Log, client *ethclient.Client,
 	contractName txs.ContractRegistry) (common.Address, ethereum.Subscription) {
 	// Get the contract address for this subscription
-	subContractAddress, err := txs.EthGetAddressFromBridgeRegistry(client, sub.RegistryContractAddress, contractName)
+	subContractAddress, err := txs.EthGetAddressFromBridgeRegistry(client, sub.EthereumBridgeRegistry, contractName)
 	if err != nil {
 		sub.Logger.Error(err.Error())
 	}
@@ -122,8 +126,8 @@ func (sub EthereumSub) startContractEventSub(logs chan ctypes.Log, client *ethcl
 	return subContractAddress, contractSub
 }
 
-// handleEthLockEvent unpacks an Ethereum lock token event, and relays a tx to Harmony
-func (sub EthereumSub) handleEthLockEvent(clientChainID *big.Int, contractAddress common.Address,
+// handleEthereumLogLockEvent unpacks an Ethereum lock token event, and relays a tx to Harmony
+func (sub EthereumSub) handleEthereumLogLockEvent(clientChainID *big.Int, contractAddress common.Address,
 	contractABI abi.ABI, eventName string, cLog ctypes.Log) error {
 	// Parse the event's attributes via contract ABI
 	event := types.EthLogLockEvent{}
@@ -169,7 +173,7 @@ func (sub EthereumSub) handleEthLogNewUnlockClaim(contractAddress common.Address
 	if err != nil {
 		return err
 	}
-	return txs.RelayOracleClaimToEthereum(sub.EthProvider, contractAddress, types.EthLogNewUnlockClaim,
+	return txs.RelayOracleClaimToEthereum(sub.EthereumProvider, contractAddress, types.EthLogNewUnlockClaim,
 		oracleClaim, sub.PrivateKey)
 	// return nil
 }

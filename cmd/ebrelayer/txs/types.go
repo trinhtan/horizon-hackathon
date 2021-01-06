@@ -15,6 +15,7 @@ type EthOracleClaim struct {
 
 // EthUnlockClaim contains data required to make an ProphecyClaim
 type EthUnlockClaim struct {
+	HarmonyChainID   *big.Int
 	HarmonySender    common.Address
 	EthereumReceiver common.Address
 	Token            common.Address

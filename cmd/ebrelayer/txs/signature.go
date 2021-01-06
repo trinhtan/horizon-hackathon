@@ -53,7 +53,7 @@ func LoadSender() (address common.Address, err error) {
 	return fromAddress, nil
 }
 
-// GenerateClaimMessage Generates a hashed message containing a ProphecyClaim event's data
+// GenerateClaimMessage Generates a hashed message containing a UnlockClaim event's data
 func GenerateClaimMessage(event types.EthLogNewUnlockClaimEvent) []byte {
 	unlockID := solsha3.Int256(event.UnlockID)
 	sender := solsha3.Int256(event.HarmonySender.Hex())
@@ -61,7 +61,7 @@ func GenerateClaimMessage(event types.EthLogNewUnlockClaimEvent) []byte {
 	token := solsha3.String(event.TokenAddress.Hex())
 	amount := solsha3.Int256(event.Amount)
 
-	// Generate claim message using ProphecyClaim data
+	// Generate claim message using UnlockClaim data
 	return solsha3.SoliditySHA3(unlockID, sender, recipient, token, amount)
 }
 

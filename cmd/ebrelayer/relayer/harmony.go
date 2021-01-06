@@ -5,9 +5,11 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 
 	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ctypes "github.com/ethereum/go-ethereum/core/types"
 	tmLog "github.com/tendermint/tendermint/libs/log"
@@ -19,35 +21,39 @@ import (
 
 // HarmonySub is an Ethereum listener that can relay txs to Cosmos and Ethereum
 type HarmonySub struct {
-	HmyProvider    string
-	BridgeRegistry common.Address
-	ValidatorName  string
-	PrivateKey     *ecdsa.PrivateKey
-	Logger         tmLog.Logger
+	HarmonyProvider        string
+	EthereumProvider       string
+	HarmonyBridgeRegistry  common.Address
+	EthereumBridgeRegistry common.Address
+	ValidatorName          string
+	PrivateKey             *ecdsa.PrivateKey
+	Logger                 tmLog.Logger
 }
 
 // NewHarmonySub initializes a new HarmonySub
 func NewHarmonySub(inBuf io.Reader, validatorMoniker,
-	hmyProvider string, bridgeRegistry common.Address, privateKey *ecdsa.PrivateKey,
+	harmonyProvider string, ethereumProvider string, harmonyBridgeRegistry common.Address, ethereumBridgeRegistry common.Address, privateKey *ecdsa.PrivateKey,
 	logger tmLog.Logger) (HarmonySub, error) {
 
 	return HarmonySub{
-		HmyProvider:    hmyProvider,
-		BridgeRegistry: bridgeRegistry,
-		ValidatorName:  "validator",
-		PrivateKey:     privateKey,
-		Logger:         logger,
+		HarmonyProvider:        harmonyProvider,
+		EthereumProvider:       ethereumProvider,
+		HarmonyBridgeRegistry:  harmonyBridgeRegistry,
+		EthereumBridgeRegistry: ethereumBridgeRegistry,
+		ValidatorName:          "validator",
+		PrivateKey:             privateKey,
+		Logger:                 logger,
 	}, nil
 }
 
 // Start an Ethereum chain subscription
 func (sub HarmonySub) Start() {
-	client, err := SetupWebsocketHmyClient(sub.HmyProvider)
+	client, err := SetupWebsocketHmyClient(sub.HarmonyProvider)
 	if err != nil {
 		sub.Logger.Error(err.Error())
 		os.Exit(1)
 	}
-	sub.Logger.Info("Started Harmony websocket with provider:", sub.HmyProvider)
+	sub.Logger.Info("Started Harmony websocket with provider:", sub.HarmonyProvider)
 
 	clientChainID, err := client.NetworkID(context.Background())
 	if err != nil {
@@ -61,38 +67,38 @@ func (sub HarmonySub) Start() {
 	logs := make(chan ctypes.Log)
 
 	// Start BridgeBank subscription, prepare contract ABI and LockLog event signature
-	_, subBridgeBank := sub.startHmyContractEventSub(logs, client, txs.BridgeBank)
-	bridgeBankContractABI := contract.LoadABI(txs.BridgeBank)
-	_ = bridgeBankContractABI.Events[types.HmyLogLock.String()].Id().Hex()
+	bridgeBankAddress, subBridgeBank := sub.startHarmonyContractEventSub(logs, client, txs.BridgeBank)
+	bridgeBankContractABI := contract.LoadHarmonyABI(txs.BridgeBank)
+	eventLogLockSignature := bridgeBankContractABI.Events[types.HmyLogLock.String()].Id().Hex()
 
-	// Start harmonyBridge subscription, prepare contract ABI and LogNewProphecyClaim event signature
-	_, subHarmonyBridge := sub.startHmyContractEventSub(logs, client, txs.HarmonyBridge)
-	harmonyBridgeContractABI := contract.LoadABI(txs.HarmonyBridge)
-	_ = harmonyBridgeContractABI.Events[types.HmyLogNewUnlockClaim.String()].Id().Hex()
+	// Start ethereumBridge subscription, prepare contract ABI and HmyLogNewUnlockClaim event signature
+	_, subEthereumBridge := sub.startHarmonyContractEventSub(logs, client, txs.EthereumBridge)
+	ethereumBridgeContractABI := contract.LoadHarmonyABI(txs.EthereumBridge)
+	_ = ethereumBridgeContractABI.Events[types.HmyLogNewUnlockClaim.String()].Id().Hex()
 
 	for {
 		select {
 		// Handle any errors
 		case err := <-subBridgeBank.Err():
 			sub.Logger.Error(err.Error())
-		case err := <-subHarmonyBridge.Err():
+		case err := <-subEthereumBridge.Err():
 			sub.Logger.Error(err.Error())
 		// vLog is raw event data
 		case vLog := <-logs:
 			sub.Logger.Info(fmt.Sprintf("Witnessed tx %s on block %d\n", vLog.TxHash.Hex(), vLog.BlockNumber))
-			// var err error
-			// switch vLog.Topics[0].Hex() {
-			// case eventLogLockSignature:
-			// 	err = sub.handleEthereumLockEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI,
-			// 		types.LogLock.String(), vLog)
-			// case eventLogNewUnlockClaimSignature:
-			// 	err = sub.handleLogNewUnlockClaim(harmonyBridgeAddress, harmonyBridgeContractABI,
-			// 		types.LogNewUnlockClaim.String(), vLog)
-			// }
-			// // TODO: Check local events store for status, if retryable, attempt relay again
-			// if err != nil {
-			// 	sub.Logger.Error(err.Error())
-			// }
+			var err error
+			switch vLog.Topics[0].Hex() {
+			case eventLogLockSignature:
+				err = sub.handleHarmonyLogLockEvent(clientChainID, bridgeBankAddress, bridgeBankContractABI, types.HmyLogLock.String(), vLog)
+				// case eventLogNewUnlockClaimSignature:
+				// 	err = sub.handleHarmonyLogNewUnlockClaim(ethereumBridgeAddress, ethereumBridgeContractABI,
+				// 		types.HmyLogNewUnlockClaim.String(), vLog)
+			}
+			// TODO: Check local events store for status, if retryable, attempt relay again
+			if err != nil {
+				sub.Logger.Error(err.Error())
+				continue
+			}
 		}
 	}
 
@@ -123,10 +129,10 @@ func (sub HarmonySub) Start() {
 }
 
 // startContractEventSub : starts an event subscription on the specified Ethereum contract
-func (sub HarmonySub) startHmyContractEventSub(logs chan ctypes.Log, client *hmyclient.Client,
+func (sub HarmonySub) startHarmonyContractEventSub(logs chan ctypes.Log, client *hmyclient.Client,
 	contractName txs.ContractRegistry) (common.Address, ethereum.Subscription) {
 	// Get the contract address for this subscription
-	subContractAddress, err := txs.HmyGetAddressFromBridgeRegistry(client, sub.BridgeRegistry, contractName)
+	subContractAddress, err := txs.HmyGetAddressFromBridgeRegistry(client, sub.HarmonyBridgeRegistry, contractName)
 	if err != nil {
 		sub.Logger.Error(err.Error())
 	}
@@ -144,6 +150,53 @@ func (sub HarmonySub) startHmyContractEventSub(logs chan ctypes.Log, client *hmy
 	sub.Logger.Info(fmt.Sprintf("Harmony side - Subscribed to %v contract at address: %s", contractName, subContractAddress.Hex()))
 	return subContractAddress, contractSub
 }
+
+// handleHarmonyLogLockEvent unpacks an Ethereum lock token event, and relays a tx to Harmony
+func (sub HarmonySub) handleHarmonyLogLockEvent(clientChainID *big.Int, bridgeBankAddress common.Address,
+	contractABI abi.ABI, eventName string, cLog ctypes.Log) error {
+	// Parse the event's attributes via contract ABI
+	event := types.HmyLogLockEvent{}
+	err := contractABI.Unpack(&event, eventName, cLog.Data)
+	if err != nil {
+		sub.Logger.Error("error unpacking: %v", err)
+	}
+	event.BridgeBankAddress = bridgeBankAddress
+	event.HarmonyChainID = clientChainID
+
+	sub.Logger.Info(event.String())
+
+	// return nil
+
+	// Add the event to the record
+	types.NewHarmonyEventWrite(cLog.TxHash.Hex(), event)
+
+	unlockClaim, err := txs.HarmonyEventToEthereumBridgeClaim(&event)
+	if err != nil {
+		return err
+	}
+
+	return txs.RelayUnlockClaimToEthereum(sub.EthereumProvider, sub.EthereumBridgeRegistry, types.HmyLogLock, unlockClaim, sub.PrivateKey)
+}
+
+// // Unpacks a handleHarmonyLogNewUnlockClaim event, builds a new OracleClaim, and relays it to Ethereum
+// func (sub HarmonySub) handleHarmonyLogNewUnlockClaim(contractAddress common.Address, contractABI abi.ABI,
+// 	eventName string, cLog ctypes.Log) error {
+// 	// Parse the event's attributes via contract ABI
+// 	event := types.HmyLogNewUnlockClaimEvent{}
+// 	err := contractABI.Unpack(&event, eventName, cLog.Data)
+// 	if err != nil {
+// 		sub.Logger.Error("error unpacking: %v", err)
+// 	}
+// 	sub.Logger.Info(event.String())
+
+// 	// oracleClaim, err := txs.UnlockClaimToSignedOracleClaim(event, sub.PrivateKey)
+// 	// if err != nil {
+// 	// 	return err
+// 	// }
+// 	// return txs.RelayOracleClaimToEthereum(sub.HarmonyProvider, contractAddress, types.EthLogNewUnlockClaim,
+// 	// 	oracleClaim, sub.PrivateKey)
+// 	return nil
+// }
 
 // func main() {
 // 	// client, err := hmyclient.Dial("wss://rinkeby.infura.io/ws/v3/469a0721f318401584ab3639fb548d63")

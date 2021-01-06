@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	bridgeregistry "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/bindings/bridgeregistry"
+	ethereumbridgeregistry "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/ethereum/bindings/bridgeregistry"
 	"github.com/trinhtan/horizon-hackathon/hmyclient"
 )
 
@@ -26,15 +26,17 @@ const (
 	Oracle
 	// BridgeBank bridgeBank contract
 	BridgeBank
-	// HarmonyBridge cosmosBridge contract
+	// HarmonyBridge  contract
 	HarmonyBridge
+	// EthereumBridge  contract
+	EthereumBridge
 	// BridgeRegistry contract
 	BridgeRegistry
 )
 
 // String returns the event type as a string
 func (d ContractRegistry) String() string {
-	return [...]string{"valset", "oracle", "bridgebank", "harmonybridge", "bridgeregistry"}[d-1]
+	return [...]string{"valset", "oracle", "bridgebank", "harmonybridge", "ethereumbridge", "bridgeregistry"}[d-1]
 }
 
 // EthGetAddressFromBridgeRegistry queries the requested contract address from the BridgeRegistry contract
@@ -59,7 +61,7 @@ func EthGetAddressFromBridgeRegistry(client *ethclient.Client, registry common.A
 	}
 
 	// Initialize BridgeRegistry instance
-	registryInstance, err := bridgeregistry.NewBridgeRegistry(registry, client)
+	registryInstance, err := ethereumbridgeregistry.NewBridgeRegistry(registry, client)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -116,16 +118,16 @@ func HmyGetAddressFromBridgeRegistry(client *hmyclient.Client, registry common.A
 	switch target {
 	case Valset:
 		// address, err = registryInstance.Valset(&auth)
-		address = common.HexToAddress("0x3EBB943c851040C2C56b2020210e8472a547ee1D")
+		address = common.HexToAddress("0x294cBe28EE7A28c0f9B0473d527dfEd103a5a286")
 	case Oracle:
 		// address, err = registryInstance.Oracle(&auth)
-		address = common.HexToAddress("0x3EBB943c851040C2C56b2020210e8472a547ee1D")
+		address = common.HexToAddress("0xA0386fbd75E368001B8eF0b3F33e12261b6c787F")
+	case EthereumBridge:
+		// address, err = registryInstance.HarmonyBridge(&auth)
+		address = common.HexToAddress("0xb5b7C741235A8eebbAc0Fe5782a0A2c235fA12dA")
 	case BridgeBank:
 		// address, err = registryInstance.BridgeBank(&auth)
-		address = common.HexToAddress("0x3EBB943c851040C2C56b2020210e8472a547ee1D")
-	case HarmonyBridge:
-		// address, err = registryInstance.HarmonyBridge(&auth)
-		address = common.HexToAddress("0x3EBB943c851040C2C56b2020210e8472a547ee1D")
+		address = common.HexToAddress("0xF5c75E71240c7c346a299A2EE9532d1c5B384Fb4")
 	default:
 		panic("invalid target contract address")
 	}

@@ -35,7 +35,7 @@ var rootCmd = &cobra.Command{
 func initRelayerCmd() *cobra.Command {
 
 	initRelayerCmd := &cobra.Command{
-		Use:     "init [web3Provider] [Eth-bridgeRegistryContractAddress] [hmyProvider] [Hmy-bridgeRegistryContract] [validatorMoniker]",
+		Use:     "init [ethereumProvider] [Eth-bridgeRegistryContractAddress] [harmonyProvider] [Hmy-bridgeRegistryContract] [validatorMoniker]",
 		Short:   "Validate credentials and initialize subscriptions to both chains",
 		Args:    cobra.ExactArgs(5),
 		Example: "ebrelayer ws://localhost:7545/ 0x30753E4A8aad7F8597332E813735Def5dD395028  wss://ws.s0.b.hmny.io 0x30753E4A8aad7F8597332E813735Def5dD395028 validator",
@@ -69,22 +69,22 @@ func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 	if !relayer.IsWebsocketURL(args[0]) {
 		return errors.Errorf("invalid [web3-provider]: %s", args[0])
 	}
-	web3Provider := args[0]
+	ethereumProvider := args[0]
 
 	if !common.IsHexAddress(args[1]) {
 		return errors.Errorf("invalid [bridge-registry-contract-address]: %s", args[1])
 	}
-	ethContractAddress := common.HexToAddress(args[1])
+	ethereumBridgeRegistry := common.HexToAddress(args[1])
 
 	if !relayer.IsWebsocketURL(args[2]) {
 		return errors.Errorf("invalid [hmy-provider]: %s", args[2])
 	}
-	hmyProvider := args[2]
+	harmonyProvider := args[2]
 
 	if !common.IsHexAddress(args[3]) {
 		return errors.Errorf("invalid [bridge-registry-contract-address]: %s", args[3])
 	}
-	hmyContractAddress := common.HexToAddress(args[3])
+	harmonyBridgeRegistry := common.HexToAddress(args[3])
 
 	if len(strings.Trim(args[4], "")) == 0 {
 		return errors.Errorf("invalid [validator-moniker]: %s", args[4])
@@ -98,19 +98,20 @@ func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 	// Initialize new Ethereum event listener
 	inBuf := bufio.NewReader(cmd.InOrStdin())
 
-	ethSub, err := relayer.NewEthereumSub(inBuf, validatorMoniker, web3Provider,
-		ethContractAddress, privateKey, logger)
+	ethereumSub, err := relayer.NewEthereumSub(inBuf, validatorMoniker, ethereumProvider, harmonyProvider,
+		ethereumBridgeRegistry, harmonyBridgeRegistry, privateKey, logger)
 	if err != nil {
 		return err
 	}
 
-	hmySub, err := relayer.NewHarmonySub(inBuf, validatorMoniker, hmyProvider, hmyContractAddress, privateKey, logger)
+	harmonySub, err := relayer.NewHarmonySub(inBuf, validatorMoniker, harmonyProvider, ethereumProvider,
+		harmonyBridgeRegistry, ethereumBridgeRegistry, privateKey, logger)
 	if err != nil {
 		return err
 	}
 
-	go hmySub.Start()
-	go ethSub.Start()
+	go harmonySub.Start()
+	go ethereumSub.Start()
 
 	// Exit signal enables graceful shutdown
 	exitSignal := make(chan os.Signal, 1)
@@ -122,16 +123,34 @@ func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 
 // RunGenerateBindingsCmd : executes the generateBindingsCmd
 func RunGenerateBindingsCmd(cmd *cobra.Command, args []string) error {
-	contracts := contract.LoadBridgeContracts()
+	ethereumContracts := contract.LoadEthereumBridgeContracts()
 
 	// Compile contracts, generating contract bins and abis
-	err := contract.CompileContracts(contracts)
+	err := contract.CompileEthereumContracts(ethereumContracts)
 	if err != nil {
 		return err
 	}
 
 	// Generate contract bindings from bins and abis
-	return contract.GenerateBindings(contracts)
+	err = contract.GenerateEthereumBindings(ethereumContracts)
+	if err != nil {
+		return err
+	}
+
+	harmonyContracts := contract.LoadHarmonyBridgeContracts()
+
+	// Compile contracts, generating contract bins and abis
+	err = contract.CompileHarmonyContracts(harmonyContracts)
+	if err != nil {
+		return err
+	}
+
+	// Generate contract bindings from bins and abis
+	err = contract.GenerateHarmonyBindings(harmonyContracts)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {
