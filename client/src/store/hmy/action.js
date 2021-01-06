@@ -1,6 +1,6 @@
 import { Harmony } from '@harmony-js/core';
 import { ChainID, ChainType } from '@harmony-js/utils';
-
+import BridgeBankHmy from 'contracts/BridgeBankHmy.json';
 import WalletConnectProvider from '@walletconnect/web3-provider';
 
 const provider = new WalletConnectProvider({
@@ -32,4 +32,14 @@ export const setAddress = address => async dispatch => {
 export const SET_IS_AUTHORIZED = '@@hmy/SET_IS_AUTHORIZED';
 export const setIsAuthorized = isAuthorized => async dispatch => {
   dispatch({ type: SET_IS_AUTHORIZED, isAuthorized });
+};
+
+export const SET_BRIDGE_BANK = '@@hmy/SET_BRIDGE_BANK';
+export const setBridgeBank = bridgeBankInstance => dispatch => {
+  dispatch({ type: SET_BRIDGE_BANK, bridgeBankInstance });
+};
+
+export const SET_CHAINID = '@@hmy/SET_CHAINID';
+export const setChainId = chainId => dispatch => {
+  dispatch({ type: SET_CHAINID, chainId });
 };

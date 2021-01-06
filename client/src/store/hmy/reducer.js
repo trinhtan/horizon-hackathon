@@ -2,7 +2,9 @@ import * as actions from './action';
 const initState = {
   address: null,
   hmy: null,
-  isAuthorized: false
+  isAuthorized: false,
+  bridgeBankInstance: null,
+  chainId: 0
 };
 
 const reducer = (state = initState, action) => {
@@ -21,6 +23,16 @@ const reducer = (state = initState, action) => {
       return {
         ...state,
         isAuthorized: action.isAuthorized
+      };
+    case actions.SET_CHAINID:
+      return {
+        ...state,
+        chainId: action.chainId
+      };
+    case actions.SET_BRIDGE_BANK:
+      return {
+        ...state,
+        bridgeBankInstance: action.bridgeBankInstance
       };
     default:
       return state;
