@@ -14,6 +14,16 @@ import {
   swapTokenForWETH,
   swapTokenForONE
 } from 'utils/transferEth';
+
+import {
+  swapToken_1_1_hmy,
+  swapONEForETH,
+  swapONEForWONE,
+  swapONEForToken,
+  swapTokenForToken_hmy,
+  swapTokenForWONE,
+  swapTokenForETH
+} from 'utils/transferHmy';
 import {
   RightOutlined,
   ArrowRightOutlined,
@@ -34,6 +44,7 @@ function SwapPage() {
   const addressETH = useSelector(state => state.eth.address);
   const addressHmy = useSelector(state => state.hmy.address);
   const ethChainId = useSelector(state => state.eth.chainId);
+  const hmyChainId = useSelector(state => state.hmy.chainId);
 
   const listAddressDest = useMemo(() => {
     return { 1: addressETH, 0: addressHmy };
@@ -141,6 +152,38 @@ function SwapPage() {
 
     if (indexRoadSwap) {
       // Harmony -> ETH
+      if (tokenSource === 'ONE') {
+        if (tokenDest === 'ONE') {
+          await swapONEForWONE(addressHmy, addressETH, amountSource, hmyChainId);
+        } else if (tokenDest === 'ETH') {
+          await swapONEForETH(addressHmy, addressETH, amountSource, hmyChainId);
+        } else {
+          let addressDest = getAddressToken(hmyChainId, tokenDest);
+          await swapONEForToken(addressHmy, addressETH, amountSource, addressDest, hmyChainId);
+        }
+      } else if (tokenSource === tokenDest) {
+        let addressSource = getHmyAddressToken(hmyChainId, tokenSource);
+        await swapToken_1_1_hmy(addressHmy, addressETH, addressSource, amountSource, hmyChainId);
+      } else {
+        if (tokenDest === 'ETH') {
+          let addressSource = getHmyAddressToken(hmyChainId, tokenSource);
+          await swapTokenForETH(addressHmy, addressETH, addressSource, amountSource, hmyChainId);
+        } else if (tokenDest === 'ONE') {
+          let addressSource = getHmyAddressToken(hmyChainId, tokenSource);
+          await swapTokenForWONE(addressHmy, addressETH, addressSource, amountSource, hmyChainId);
+        } else {
+          let addressSource = getHmyAddressToken(hmyChainId, tokenSource);
+          let addressDest = getAddressToken(hmyChainId, tokenDest);
+          await swapTokenForToken_hmy(
+            addressHmy,
+            addressETH,
+            addressSource,
+            amountSource,
+            addressDest,
+            hmyChainId
+          );
+        }
+      }
     } else {
       // ETH -> Harmony
       if (tokenSource === 'ETH') {
@@ -163,8 +206,8 @@ function SwapPage() {
           let addressSource = getAddressToken(ethChainId, tokenSource);
           await swapTokenForWETH(addressETH, addressHmy, addressSource, amountSource, ethChainId);
         } else {
-          let addressSource = getAddressToken(ethChainId, tokenSource);
-          let addressDest = getHmyAddressToken(ethChainId, tokenDest);
+          let addressSource = getHmyAddressToken(ethChainId, tokenSource);
+          let addressDest = getAddressToken(ethChainId, tokenDest);
           await swapTokenForToken(
             addressETH,
             addressHmy,
