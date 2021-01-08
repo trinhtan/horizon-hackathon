@@ -8,16 +8,18 @@ const (
 	BridgeRegistry BridgeContract = iota + 1
 	// Valset manages the validator set and signature verification
 	Valset
-	// Oracle enables validators to make OracleClaims and processes ProphecyClaims
+	// Oracle enables validators to make OracleClaims and processes UnlockClaims
 	Oracle
-	// HarmonyBridge enables validators to make ProphecyClaims
+	// HarmonyBridge enables validators to make UnlockClaims
 	HarmonyBridge
+	// EthereumBridge enables validators to make UnlockClaims
+	EthereumBridge
 	// BridgeBank manages protocol assets on both Ethereum and Harmony
 	BridgeBank
 )
 
 // BridgeContractToString returns the string associated with a BridgeContract
-var BridgeContractToString = [...]string{"BridgeRegistry", "Valset", "Oracle", "HarmonyBridge", "BridgeBank"}
+var BridgeContractToString = [...]string{"BridgeRegistry", "Valset", "Oracle", "HarmonyBridge", "EthereumBridge", "BridgeBank"}
 
 // String returns the BridgeContract as a string
 func (d BridgeContract) String() string {
@@ -27,13 +29,24 @@ func (d BridgeContract) String() string {
 // BridgeContracts is a slice of BridgeContract
 type BridgeContracts []BridgeContract
 
-// LoadBridgeContracts loads populated slice of BridgeContract
-func LoadBridgeContracts() BridgeContracts {
+// LoadEthereumBridgeContracts loads populated slice of BridgeContract
+func LoadEthereumBridgeContracts() BridgeContracts {
 	return BridgeContracts{
 		BridgeRegistry,
 		Valset,
 		Oracle,
 		HarmonyBridge,
+		BridgeBank,
+	}
+}
+
+// LoadHarmonyBridgeContracts loads populated slice of BridgeContract
+func LoadHarmonyBridgeContracts() BridgeContracts {
+	return BridgeContracts{
+		BridgeRegistry,
+		Valset,
+		Oracle,
+		EthereumBridge,
 		BridgeBank,
 	}
 }

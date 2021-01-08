@@ -11,7 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	oracle "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/bindings/oracle"
+	harmonybridge "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/ethereum/bindings/harmonybridge"
+	oracle "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/ethereum/bindings/oracle"
 	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/types"
 )
 
@@ -20,50 +21,48 @@ const (
 	GasLimit = uint64(3000000)
 )
 
-// // RelayProphecyClaimToEthereum relays the provided ProphecyClaim to HarmonyBridge contract on the Ethereum network
-// func RelayProphecyClaimToEthereum(provider string, contractAddress common.Address, event types.Event,
-// 	claim ProphecyClaim, key *ecdsa.PrivateKey) error {
-// 	// Initialize client service, validator's tx auth, and target contract address
-// 	client, auth, target := initRelayConfig(provider, contractAddress, event, key)
+// RelayUnlockClaimToEthereum relays the provided UnlockClaim to HarmonyBridge contract on the Ethereum network
+func RelayUnlockClaimToEthereum(ethereumProvider string, ethereumBridgeRegistry common.Address, event types.Event,
+	claim EthUnlockClaim, privateKey *ecdsa.PrivateKey) error {
+	// Initialize client service, validator's tx auth, and target contract address
+	client, auth, target := initEthereumRelayConfig(ethereumProvider, ethereumBridgeRegistry, event, privateKey)
 
-// 	// Initialize HarmonyBridge instance
-// 	fmt.Println("\nFetching HarmonyBridge contract...")
-// 	harmonyBridgeInstance, err := harmonybridge.NewHarmonyBridge(target, client)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+	// Initialize HarmonyBridge instance
+	fmt.Println("\nFetching HarmonyBridge contract...")
+	harmonyBridgeInstance, err := harmonybridge.NewHarmonyBridge(target, client)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-// 	// Send transaction
-// 	fmt.Println("Sending new ProphecyClaim to HarmonyBridge...")
-// 	// tx, err := harmonyBridgeInstance.NewUnlockClaim(auth,
-// 	// 	claim.CosmosSender, claim.EthereumReceiver, claim.Symbol, claim.Amount)
-// 	tx, err := harmonyBridgeInstance.NewUnlockClaim(auth,
-// 		claim.EthereumReceiver, claim.EthereumReceiver, claim.EthereumReceiver, claim.Amount)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	fmt.Println("NewProphecyClaim tx hash:", tx.Hash().Hex())
+	// Send transaction
+	fmt.Println("Sending new UnlockClaim to HarmonyBridge...")
+	tx, err := harmonyBridgeInstance.NewUnlockClaim(auth,
+		claim.HarmonySender, claim.EthereumReceiver, claim.Token, claim.Amount)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("NewUnlockClaim tx hash:", tx.Hash().Hex())
 
-// 	// Get the transaction receipt
-// 	// receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-// 	// if err != nil {
-// 	// 	log.Fatal(err)
-// 	// }
+	// Get the transaction receipt
+	// receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-// 	// switch receipt.Status {
-// 	// case 0:
-// 	// 	fmt.Println("Tx Status: 0 - Failed")
-// 	// case 1:
-// 	// 	fmt.Println("Tx Status: 1 - Successful")
-// 	// }
-// 	return nil
-// }
+	// switch receipt.Status {
+	// case 0:
+	// 	fmt.Println("Tx Status: 0 - Failed")
+	// case 1:
+	// 	fmt.Println("Tx Status: 1 - Successful")
+	// }
+	return nil
+}
 
 // RelayOracleClaimToEthereum relays the provided OracleClaim to Oracle contract on the Ethereum network
 func RelayOracleClaimToEthereum(provider string, contractAddress common.Address, event types.Event,
-	claim EthOracleClaim, key *ecdsa.PrivateKey) error {
+	claim EthOracleClaim, privateKey *ecdsa.PrivateKey) error {
 	// Initialize client service, validator's tx auth, and target contract address
-	client, auth, target := initRelayConfig(provider, contractAddress, event, key)
+	client, auth, target := initEthereumRelayConfig(provider, contractAddress, event, privateKey)
 
 	// Initialize Oracle instance
 	fmt.Println("\nFetching Oracle contract...")
@@ -96,8 +95,8 @@ func RelayOracleClaimToEthereum(provider string, contractAddress common.Address,
 	return nil
 }
 
-// initRelayConfig set up Ethereum client, validator's transaction auth, and the target contract's address
-func initRelayConfig(provider string, registry common.Address, event types.Event, key *ecdsa.PrivateKey,
+// initEthereumRelayConfig set up Ethereum client, validator's transaction auth, and the target contract's address
+func initEthereumRelayConfig(provider string, registry common.Address, event types.Event, privateKey *ecdsa.PrivateKey,
 ) (*ethclient.Client, *bind.TransactOpts, common.Address) {
 	// Start Ethereum client
 	client, err := ethclient.Dial(provider)
@@ -122,7 +121,7 @@ func initRelayConfig(provider string, registry common.Address, event types.Event
 	}
 
 	// Set up TransactOpts auth's tx signature authorization
-	transactOptsAuth := bind.NewKeyedTransactor(key)
+	transactOptsAuth := bind.NewKeyedTransactor(privateKey)
 	transactOptsAuth.Nonce = big.NewInt(int64(nonce))
 	transactOptsAuth.Value = big.NewInt(0) // in wei
 	transactOptsAuth.GasLimit = GasLimit
@@ -130,10 +129,10 @@ func initRelayConfig(provider string, registry common.Address, event types.Event
 
 	var targetContract ContractRegistry
 	switch event {
-	// // ProphecyClaims are sent to the HarmonyBridge contract
-	// case types.MsgBurn, types.MsgLock:
-	// 	targetContract = HarmonyBridge
-	// // OracleClaims are sent to the Oracle contract
+	// New Claim
+	case types.HmyLogLock:
+		targetContract = HarmonyBridge
+	// OracleClaims are sent to the Oracle contract
 	case types.EthLogNewUnlockClaim:
 		targetContract = Oracle
 	default:

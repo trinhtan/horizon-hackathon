@@ -9,9 +9,8 @@ import "./BridgeBank/BridgeBank.sol";
 import "./BridgeRegistry.sol";
 import "./Oracle.sol";
 
-contract HarmonyBridge is VersionedInitializable {
+contract EthereumBridge is VersionedInitializable {
     using SafeMath for uint256;
-
 
     uint256 public constant HARMONYBRIDGE_REVISION = 0x1;
     uint256 public unlockClaimCount;
@@ -26,24 +25,24 @@ contract HarmonyBridge is VersionedInitializable {
     enum Status {Null, Pending, Success, Failed}
 
     struct UnlockClaim {
-        address harmonySender;
-        address payable ethereumReceiver;
+        address ethereumSender;
+        address payable harmonyReceiver;
         address originalValidator;
         address token;
         uint256 amount;
         Status status;
     }
 
-    event EthLogNewUnlockClaim(
+    event HmyLogNewUnlockClaim(
         uint256 _unlockID,
-        address _harmonySender,
-        address payable _ethereumReceiver,
+        address _ethereumSender,
+        address payable _harmonyReceiver,
         address _validatorAddress,
         address _tokenAddress,
         uint256 _amount
     );
 
-    event EthLogUnlockCompleted(uint256 _unlockID);
+    event HmyLogUnlockCompleted(uint256 _unlockID);
 
     modifier isPending(uint256 _unlockID) {
         require(isUnlockClaimActive(_unlockID), "Unlock claim is not active");
@@ -57,15 +56,14 @@ contract HarmonyBridge is VersionedInitializable {
 
     modifier isActive() {
         require(
-            bridgeRegistry.getOracle() != address(0) && bridgeRegistry.getBridgeBank() != address(0),
+            bridgeRegistry.getOracle() != address(0) &&
+                bridgeRegistry.getBridgeBank() != address(0),
             "The Operator must set the oracle and bridge bank for bridge activation"
         );
         _;
     }
 
-    function initialize(
-        address _bridgeRegistry
-    ) public initializer {
+    function initialize(address _bridgeRegistry) public initializer {
         bridgeRegistry = BridgeRegistry(_bridgeRegistry);
         operator = bridgeRegistry.getOperator();
         valset = Valset(bridgeRegistry.getValset());
@@ -79,12 +77,11 @@ contract HarmonyBridge is VersionedInitializable {
     }
 
     function newUnlockClaim(
-        address _harmonySender,
-        address payable _ethereumReceiver,
+        address _ethereumSender,
+        address payable _harmonyReceiver,
         address _token,
         uint256 _amount
     ) public isActive {
-
         require(
             valset.isActiveValidator(msg.sender),
             "Must be an active validator"
@@ -94,24 +91,25 @@ contract HarmonyBridge is VersionedInitializable {
             "Not enough locked assets to complete the proposed prophecy"
         );
 
-        // Create the new UnlockClaim
-        UnlockClaim memory unlockClaim = UnlockClaim(
-            _harmonySender,
-            _ethereumReceiver,
-            msg.sender,
-            _token,
-            _amount,
-            Status.Pending
-        );
+        // Create the new Unlock
+        UnlockClaim memory unlockClaim =
+            UnlockClaim(
+                _ethereumSender,
+                _harmonyReceiver,
+                msg.sender,
+                _token,
+                _amount,
+                Status.Pending
+            );
 
-        // Increment count and add the new UnlockClaim to the mapping
+        // Increment count and add the new Unlock to the mapping
         unlockClaimCount = unlockClaimCount.add(1);
         unlockClaims[unlockClaimCount] = unlockClaim;
 
-        emit EthLogNewUnlockClaim(
+        emit HmyLogNewUnlockClaim(
             unlockClaimCount,
-            _harmonySender,
-            _ethereumReceiver,
+            _ethereumSender,
+            _harmonyReceiver,
             msg.sender,
             _token,
             _amount
@@ -131,20 +129,20 @@ contract HarmonyBridge is VersionedInitializable {
 
         unlockTokens(_unlockID);
 
-        emit EthLogUnlockCompleted(_unlockID);
+        emit HmyLogUnlockCompleted(_unlockID);
     }
 
     function unlockTokens(uint256 _unlockID) internal {
         UnlockClaim memory unlockClaim = unlockClaims[_unlockID];
 
-        if (unlockClaim.token == bridgeBank.ETHAddress()){
-            bridgeBank.unlockETH(
-                unlockClaim.ethereumReceiver,
+        if (unlockClaim.token == bridgeBank.ONEAddress()) {
+            bridgeBank.unlockONE(
+                unlockClaim.harmonyReceiver,
                 unlockClaim.amount
             );
         } else {
             bridgeBank.unlockERC20(
-                unlockClaim.ethereumReceiver,
+                unlockClaim.harmonyReceiver,
                 unlockClaim.token,
                 unlockClaim.amount
             );
