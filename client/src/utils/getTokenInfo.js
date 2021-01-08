@@ -26,7 +26,7 @@ const tokenInfo = {
     {
       symbol: 'KNC',
       ethAddress: '0x3F80c39c0b96A0945f9F0E9f55d8A8891c5671A8',
-      hmyAddress: '0xff795577d9ac8bd7d90ee22b6c1703490b6512fd',
+      hmyAddress: 'one1del50xpzdsfug7hfu0mmyfmdfnv8v0w804txay',
       icon: knc
     },
     {
@@ -38,12 +38,12 @@ const tokenInfo = {
     {
       symbol: 'ETH',
       ethAddress: '0x0000000000000000000000000000000000000001',
-      hmyAddress: '0xff795577d9ac8bd7d90ee22b6c1703490b6512fd',
+      hmyAddress: 'one1z7aajzsmm5jj26q87p4f6q80f93xvzc3w9289f',
       icon: eth
     },
     {
       symbol: 'ONE',
-      ethAddress: '0xff795577d9ac8bd7d90ee22b6c1703490b6512fd',
+      ethAddress: '0x96b79140D5092eBe7Da50c33990156825ccb6137',
       hmyAddress: '0x0000000000000000000000000000000000000001',
       icon: one
     }
