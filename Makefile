@@ -28,6 +28,6 @@ clean:
 	rm -f ebrelayer
 
 install:
-	go install -mod=readonly ./cmd/ebrelayer
+	go install ./cmd/ebrelayer
 
 .PHONY: all build go-mod-cache build_test_container start_test_containers stop_test_containers clean install test lint all
