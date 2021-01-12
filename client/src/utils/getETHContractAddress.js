@@ -1,6 +1,6 @@
 const contractAddress = {
   42: {
-    bridgeBank: '0xb297f87654AC5d33Be4D27592E248D922147FE9B'
+    bridgeBank: '0x17F6A3398b47D7Bdf5cBfa88e36A6FaEEa71f1e6'
   }
 };
 

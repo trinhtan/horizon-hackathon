@@ -1,6 +1,6 @@
 import eth from 'assets/LogoTokens/eth.png';
 import dai from 'assets/LogoTokens/dai.png';
-import link from 'assets/LogoTokens/link.png';
+import knc from 'assets/LogoTokens/knc.png';
 import one from 'assets/LogoTokens/one.png';
 
 import metamask from 'assets/LogoWallets/metamask.png';
@@ -9,7 +9,7 @@ import walletconnect from 'assets/LogoWallets/walletconnect.png';
 export const tokens = [
   { symbol: 'ETH', icon: eth },
   { symbol: 'DAI', icon: dai },
-  { symbol: 'LINK', icon: link },
+  { symbol: 'KNC', icon: knc },
   { symbol: 'ONE', icon: one }
 ];
 
