@@ -11,6 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
+	// harmonybind "github.com/harmony-one/harmony/accounts/abi/bind"
+
 	harmonybridge "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/ethereum/bindings/harmonybridge"
 	oracle "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/ethereum/bindings/oracle"
 	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/types"
@@ -43,18 +45,6 @@ func RelayUnlockClaimToEthereum(ethereumProvider string, ethereumBridgeRegistry 
 	}
 	fmt.Println("NewUnlockClaim tx hash:", tx.Hash().Hex())
 
-	// Get the transaction receipt
-	// receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// switch receipt.Status {
-	// case 0:
-	// 	fmt.Println("Tx Status: 0 - Failed")
-	// case 1:
-	// 	fmt.Println("Tx Status: 1 - Successful")
-	// }
 	return nil
 }
 
@@ -78,20 +68,6 @@ func RelayOracleClaimToEthereum(provider string, contractAddress common.Address,
 		log.Fatal(err)
 	}
 	fmt.Println("NewOracleClaim tx hash:", tx.Hash().Hex())
-
-	// Get the transaction receipt
-	// receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// switch receipt.Status {
-	// case 0:
-	// 	fmt.Println("Tx Status: 0 - Failed")
-	// case 1:
-	// 	fmt.Println("Tx Status: 1 - Successful")
-	// }
-
 	return nil
 }
 

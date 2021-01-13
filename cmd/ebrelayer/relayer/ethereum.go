@@ -69,12 +69,12 @@ func (sub EthereumSub) Start() {
 	// Start BridgeBank subscription, prepare contract ABI and LockLog event signature
 	bridgeBankAddress, subBridgeBank := sub.startContractEventSub(logs, client, txs.BridgeBank)
 	bridgeBankContractABI := contract.LoadEthereumABI(txs.BridgeBank)
-	eventLogLockSignature := bridgeBankContractABI.Events[types.EthLogLock.String()].Id().Hex()
+	eventLogLockSignature := bridgeBankContractABI.Events[types.EthLogLock.String()].ID.Hex()
 
 	// Start harmonyBridge subscription, prepare contract ABI and EthLogNewUnlockClaim event signature
 	_, subHarmonyBridge := sub.startContractEventSub(logs, client, txs.HarmonyBridge)
 	harmonyBridgeContractABI := contract.LoadEthereumABI(txs.HarmonyBridge)
-	eventLogNewUnlockClaimSignature := harmonyBridgeContractABI.Events[types.EthLogNewUnlockClaim.String()].Id().Hex()
+	eventLogNewUnlockClaimSignature := harmonyBridgeContractABI.Events[types.EthLogNewUnlockClaim.String()].ID.Hex()
 
 	for {
 		select {
@@ -137,28 +137,20 @@ func (sub EthereumSub) handleEthereumLogLockEvent(clientChainID *big.Int, contra
 	}
 	event.BridgeBankAddress = contractAddress
 	event.EthereumChainID = clientChainID
-
-	// if eventName == types.LogBurn.String() {
-	// 	event.ClaimType = ethbridge.BurnText
-	// } else {
-	// 	event.ClaimType = ethbridge.LockText
-	// }
 	sub.Logger.Info(event.String())
 
 	// Add the event to the record
 	types.NewEventWrite(cLog.TxHash.Hex(), event)
 
-	// prophecyClaim, err := txs.EthereumEventToEthBridgeClaim(sub.ValidatorAddress, &event)
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println(prophecyClaim)
+	unlockClaim, err := txs.EthereumEventToHarmonyBridgeClaim(&event)
+	if err != nil {
+		return err
+	}
 
-	return nil
-	// return txs.RelayToCosmos(sub.Cdc, sub.ValidatorName, &prophecyClaim, sub.CliCtx, sub.TxBldr)
+	return txs.RelayUnlockClaimToHarmony(sub.HarmonyProvider, sub.HarmonyBridgeRegistry, types.EthLogLock, unlockClaim, sub.PrivateKey)
 }
 
-// Unpacks a handleEthLogNewUnlockClaim event, builds a new OracleClaim, and relays it to Ethereum
+// Unpacks a EthLogNewUnlockClaim event, builds a new OracleClaim, and relays it to Ethereum
 func (sub EthereumSub) handleEthLogNewUnlockClaim(contractAddress common.Address, contractABI abi.ABI,
 	eventName string, cLog ctypes.Log) error {
 	// Parse the event's attributes via contract ABI
@@ -169,11 +161,10 @@ func (sub EthereumSub) handleEthLogNewUnlockClaim(contractAddress common.Address
 	}
 	sub.Logger.Info(event.String())
 
-	oracleClaim, err := txs.UnlockClaimToSignedOracleClaim(event, sub.PrivateKey)
+	oracleClaim, err := txs.EthUnlockClaimToSignedOracleClaim(event, sub.PrivateKey)
 	if err != nil {
 		return err
 	}
 	return txs.RelayOracleClaimToEthereum(sub.EthereumProvider, contractAddress, types.EthLogNewUnlockClaim,
 		oracleClaim, sub.PrivateKey)
-	// return nil
 }

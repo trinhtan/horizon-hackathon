@@ -59,19 +59,6 @@ type EthLogNewUnlockClaimEvent struct {
 	Amount           *big.Int
 }
 
-// // NewEthLogNewUnlockClaimEvent creates a new NewEthLogNewUnlockClaimEvent
-// func NewEthLogNewUnlockClaimEvent(harmonySender common.Address, unlockID, amount *big.Int, ethereumReceiver,
-// 	validatorAddress, tokenAddress common.Address, claimType uint8) NewEthLogNewUnlockClaimEvent {
-// 	return NewEthLogNewUnlockClaimEvent{
-// 		HarmonySender:    harmonySender,
-// 		UnlockID:         unlockID,
-// 		Amount:           amount,
-// 		EthereumReceiver: ethereumReceiver,
-// 		ValidatorAddress: validatorAddress,
-// 		TokenAddress:     tokenAddress,
-// 	}
-// }
-
 // String implements fmt.Stringer
 func (p EthLogNewUnlockClaimEvent) String() string {
 	return fmt.Sprintf("\nUnlocl ID: %v\nHarmony Sender: %v\n"+

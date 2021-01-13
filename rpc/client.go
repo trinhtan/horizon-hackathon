@@ -273,7 +273,6 @@ func (c *Client) CallContext(ctx context.Context, result interface{}, method str
 	case len(resp.Result) == 0:
 		return ErrNoResult
 	default:
-		fmt.Println(resp.Result)
 		return json.Unmarshal(resp.Result, &result)
 	}
 }

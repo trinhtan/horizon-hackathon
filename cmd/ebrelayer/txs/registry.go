@@ -118,16 +118,16 @@ func HmyGetAddressFromBridgeRegistry(client *hmyclient.Client, registry common.A
 	switch target {
 	case Valset:
 		// address, err = registryInstance.Valset(&auth)
-		address = common.HexToAddress("0x294cBe28EE7A28c0f9B0473d527dfEd103a5a286")
+		address = common.HexToAddress("0x06D9804e525033547776B89086fBc7fab76b63D4")
 	case Oracle:
 		// address, err = registryInstance.Oracle(&auth)
-		address = common.HexToAddress("0xA0386fbd75E368001B8eF0b3F33e12261b6c787F")
+		address = common.HexToAddress("0x9A7e4fa65d491c6200e623Ba9D70AfFB02B805D1")
 	case EthereumBridge:
 		// address, err = registryInstance.HarmonyBridge(&auth)
-		address = common.HexToAddress("0xb5b7C741235A8eebbAc0Fe5782a0A2c235fA12dA")
+		address = common.HexToAddress("0x2e4362dA75b1812345a12353D09698471DAFFCfD")
 	case BridgeBank:
 		// address, err = registryInstance.BridgeBank(&auth)
-		address = common.HexToAddress("0xF5c75E71240c7c346a299A2EE9532d1c5B384Fb4")
+		address = common.HexToAddress("0xF49c435e13af396911B154E7015D2FEf1f1f8A2F")
 	default:
 		panic("invalid target contract address")
 	}
