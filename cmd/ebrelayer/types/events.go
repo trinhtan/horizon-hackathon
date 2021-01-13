@@ -11,46 +11,46 @@ var EventRecords = make(map[string]EthLogLockEvent)
 // HarmonyEventRecords map of transaction hashes to EthereumEvent structs
 var HarmonyEventRecords = make(map[string]HmyLogLockEvent)
 
-// NewEventWrite add a validator's address to the official claims list
-func NewEventWrite(txHash string, event EthLogLockEvent) {
+// EthNewEventWrite add a validator's address to the official claims list
+func EthNewEventWrite(txHash string, event EthLogLockEvent) {
 	EventRecords[txHash] = event
 }
 
-// NewHarmonyEventWrite add a validator's address to the official claims list
-func NewHarmonyEventWrite(txHash string, event HmyLogLockEvent) {
+// HmyNewEventWrite add a validator's address to the official claims list
+func HmyNewEventWrite(txHash string, event HmyLogLockEvent) {
 	HarmonyEventRecords[txHash] = event
 }
 
-// IsEventRecorded checks the sessions stored events for this transaction hash
-func IsEventRecorded(txHash string) bool {
+// EthIsEventRecorded checks the sessions stored events for this transaction hash
+func EthIsEventRecorded(txHash string) bool {
 	return EventRecords[txHash].Nonce != nil
 }
 
-// HarmonyIsEventRecorded checks the sessions stored events for this transaction hash
-func HarmonyIsEventRecorded(txHash string) bool {
+// HmyIsEventRecorded checks the sessions stored events for this transaction hash
+func HmyIsEventRecorded(txHash string) bool {
 	return HarmonyEventRecords[txHash].Nonce != nil
 }
 
-// PrintEventByTx prints any witnessed events associated with a given transaction hash
-func PrintEventByTx(txHash string) {
-	if IsEventRecorded(txHash) {
+// EthPrintEventByTx prints any witnessed events associated with a given transaction hash
+func EthPrintEventByTx(txHash string) {
+	if EthIsEventRecorded(txHash) {
 		log.Println(EventRecords[txHash].String())
 	} else {
 		log.Printf("\nNo records from this session for tx: %v\n", txHash)
 	}
 }
 
-// HarmonyPrintEventByTx prints any witnessed events associated with a given transaction hash
-func HarmonyPrintEventByTx(txHash string) {
-	if HarmonyIsEventRecorded(txHash) {
+// HmyPrintEventByTx prints any witnessed events associated with a given transaction hash
+func HmyPrintEventByTx(txHash string) {
+	if HmyIsEventRecorded(txHash) {
 		log.Println(HarmonyEventRecords[txHash].String())
 	} else {
 		log.Printf("\nNo records from this session for tx: %v\n", txHash)
 	}
 }
 
-// PrintEvents prints all the claims made on this event
-func PrintEvents() {
+// EthPrintEvents prints all the claims made on this event
+func EthPrintEvents() {
 	// For each claim, print the validator which submitted the claim
 	for txHash, event := range EventRecords {
 		log.Printf("\nTransaction: %v\n", txHash)
@@ -58,8 +58,8 @@ func PrintEvents() {
 	}
 }
 
-// HarmonyPrintEvents prints all the claims made on this event
-func HarmonyPrintEvents() {
+// HmyPrintEvents prints all the claims made on this event
+func HmyPrintEvents() {
 	// For each claim, print the validator which submitted the claim
 	for txHash, event := range HarmonyEventRecords {
 		log.Printf("\nTransaction: %v\n", txHash)

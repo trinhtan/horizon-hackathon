@@ -605,6 +605,8 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         uint256 _ethereumTokenAmount,
         uint256 _harmonyTokenAmount
     ) internal {
+        require(_harmonyTokenAmount > 0, "Amount token must be greater than zero");
+
         lockNonce = lockNonce.add(1);
 
         tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken].lockedFund.add(_ethereumTokenAmount);

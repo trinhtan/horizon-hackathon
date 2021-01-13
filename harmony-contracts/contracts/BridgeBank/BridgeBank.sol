@@ -396,7 +396,7 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         );
     }
 
-    function swapTokenForWONE(
+    function swapTokenForWrappedONE(
         address _ethereumReceiver,
         address _harmonyToken,
         uint256 _harmonyTokenAmount
@@ -612,6 +612,8 @@ contract BridgeBank is ReentrancyGuard, VersionedInitializable {
         uint256 _harmonyTokenAmount,
         uint256 _ethereumTokenAmount
     ) internal {
+        require(_ethereumTokenAmount > 0, "Amount token must be greater than zero");
+
         lockNonce = lockNonce.add(1);
 
         tokensData[_ethereumToken].lockedFund = tokensData[_ethereumToken]

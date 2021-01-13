@@ -18,8 +18,8 @@ func IsWebsocketURL(rawurl string) bool {
 	return u.Scheme == "ws" || u.Scheme == "wss"
 }
 
-// SetupWebsocketEthClient returns boolean indicating if a URL is valid websocket ethclient
-func SetupWebsocketEthClient(ethURL string) (*ethclient.Client, error) {
+// EthSetupWebsocketClient returns boolean indicating if a URL is valid websocket ethclient
+func EthSetupWebsocketClient(ethURL string) (*ethclient.Client, error) {
 	if strings.TrimSpace(ethURL) == "" {
 		return nil, nil
 	}
@@ -36,8 +36,8 @@ func SetupWebsocketEthClient(ethURL string) (*ethclient.Client, error) {
 	return client, nil
 }
 
-// SetupWebsocketHmyClient returns boolean indicating if a URL is valid websocket ethclient
-func SetupWebsocketHmyClient(hmyURL string) (*hmyclient.Client, error) {
+// HmySetupWebsocketClient returns boolean indicating if a URL is valid websocket hmyclient
+func HmySetupWebsocketClient(hmyURL string) (*hmyclient.Client, error) {
 	if strings.TrimSpace(hmyURL) == "" {
 		return nil, nil
 	}

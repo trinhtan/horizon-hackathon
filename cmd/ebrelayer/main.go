@@ -61,9 +61,14 @@ func generateBindingsCmd() *cobra.Command {
 // RunInitRelayerCmd executes initRelayerCmd
 func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 	// Load the validator's Ethereum private key from environment variables
-	privateKey, err := txs.LoadPrivateKey()
+	ethereumPrivateKey, err := txs.LoadEthereumPrivateKey()
 	if err != nil {
 		return errors.Errorf("invalid [ETHEREUM_PRIVATE_KEY] environment variable")
+	}
+
+	harmonyPrivateKey, err := txs.LoadHarmonyPrivateKey()
+	if err != nil {
+		return errors.Errorf("invalid [HARMONY_PRIVATE_KEY] environment variable")
 	}
 
 	if !relayer.IsWebsocketURL(args[0]) {
@@ -99,13 +104,13 @@ func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 	inBuf := bufio.NewReader(cmd.InOrStdin())
 
 	ethereumSub, err := relayer.NewEthereumSub(inBuf, validatorMoniker, ethereumProvider, harmonyProvider,
-		ethereumBridgeRegistry, harmonyBridgeRegistry, privateKey, logger)
+		ethereumBridgeRegistry, harmonyBridgeRegistry, ethereumPrivateKey, harmonyPrivateKey, logger)
 	if err != nil {
 		return err
 	}
 
 	harmonySub, err := relayer.NewHarmonySub(inBuf, validatorMoniker, harmonyProvider, ethereumProvider,
-		harmonyBridgeRegistry, ethereumBridgeRegistry, privateKey, logger)
+		harmonyBridgeRegistry, ethereumBridgeRegistry, harmonyPrivateKey, ethereumPrivateKey, logger)
 	if err != nil {
 		return err
 	}
@@ -123,30 +128,30 @@ func RunInitRelayerCmd(cmd *cobra.Command, args []string) error {
 
 // RunGenerateBindingsCmd : executes the generateBindingsCmd
 func RunGenerateBindingsCmd(cmd *cobra.Command, args []string) error {
-	ethereumContracts := contract.LoadEthereumBridgeContracts()
+	ethereumContracts := contract.EthLoadBridgeContracts()
 
 	// Compile contracts, generating contract bins and abis
-	err := contract.CompileEthereumContracts(ethereumContracts)
+	err := contract.EthCompileContracts(ethereumContracts)
 	if err != nil {
 		return err
 	}
 
 	// Generate contract bindings from bins and abis
-	err = contract.GenerateEthereumBindings(ethereumContracts)
+	err = contract.EthGenerateBindings(ethereumContracts)
 	if err != nil {
 		return err
 	}
 
-	harmonyContracts := contract.LoadHarmonyBridgeContracts()
+	harmonyContracts := contract.HmyLoadBridgeContracts()
 
 	// Compile contracts, generating contract bins and abis
-	err = contract.CompileHarmonyContracts(harmonyContracts)
+	err = contract.HmyCompileContracts(harmonyContracts)
 	if err != nil {
 		return err
 	}
 
 	// Generate contract bindings from bins and abis
-	err = contract.GenerateHarmonyBindings(harmonyContracts)
+	err = contract.HmyGenerateBindings(harmonyContracts)
 	if err != nil {
 		return err
 	}

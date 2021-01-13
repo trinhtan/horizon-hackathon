@@ -14,30 +14,30 @@ const (
 )
 
 var (
-	// BaseABIBINGenCmdEthereum is the base command for contract compilation to ABI and BIN
-	BaseABIBINGenCmdEthereum = strings.Join([]string{"solc ",
+	// EthBaseABIBINGenCmd is the base command for contract compilation to ABI and BIN
+	EthBaseABIBINGenCmd = strings.Join([]string{"solc ",
 		fmt.Sprintf("--%s ./ethereum-contracts/contracts/%s%s.sol ", SolcCmdText, DirectoryText, ContractText),
 		fmt.Sprintf("-o ./cmd/ebrelayer/contract/generated/ethereum/%s/%s ", SolcCmdText, ContractText),
 		"--overwrite ",
 		"--allow-paths *,"},
 		"")
-	// BaseBindingGenCmdEthereum is the base command for contract binding generation
-	BaseBindingGenCmdEthereum = strings.Join([]string{"abigen ",
+	// EthBaseBindingGenCmd is the base command for contract binding generation
+	EthBaseBindingGenCmd = strings.Join([]string{"abigen ",
 		fmt.Sprintf("--bin ./cmd/ebrelayer/contract/generated/ethereum/bin/%s/%s.bin ", ContractText, ContractText),
 		fmt.Sprintf("--abi ./cmd/ebrelayer/contract/generated/ethereum/abi/%s/%s.abi ", ContractText, ContractText),
 		fmt.Sprintf("--pkg %s ", ContractText),
 		fmt.Sprintf("--type %s ", ContractText),
 		fmt.Sprintf("--out ./cmd/ebrelayer/contract/generated/ethereum/bindings/%s/%s.go", ContractText, ContractText)},
 		"")
-	// BaseABIBINGenCmdHarmony is the base command for contract compilation to ABI and BIN
-	BaseABIBINGenCmdHarmony = strings.Join([]string{"solc ",
+	// HmyBaseABIBINGenCmd is the base command for contract compilation to ABI and BIN
+	HmyBaseABIBINGenCmd = strings.Join([]string{"solc ",
 		fmt.Sprintf("--%s ./harmony-contracts/contracts/%s%s.sol ", SolcCmdText, DirectoryText, ContractText),
 		fmt.Sprintf("-o ./cmd/ebrelayer/contract/generated/harmony/%s/%s ", SolcCmdText, ContractText),
 		"--overwrite ",
 		"--allow-paths *,"},
 		"")
-	// BaseBindingGenCmdHarmony is the base command for contract binding generation
-	BaseBindingGenCmdHarmony = strings.Join([]string{"abigen ",
+	// HmyBaseBindingGenCmd is the base command for contract binding generation
+	HmyBaseBindingGenCmd = strings.Join([]string{"abigen ",
 		fmt.Sprintf("--bin ./cmd/ebrelayer/contract/generated/harmony/bin/%s/%s.bin ", ContractText, ContractText),
 		fmt.Sprintf("--abi ./cmd/ebrelayer/contract/generated/harmony/abi/%s/%s.abi ", ContractText, ContractText),
 		fmt.Sprintf("--pkg %s ", ContractText),
@@ -46,15 +46,15 @@ var (
 		"")
 )
 
-// CompileEthereumContracts compiles contracts to BIN and ABI files
-func CompileEthereumContracts(contracts BridgeContracts) error {
+// EthCompileContracts compiles contracts to BIN and ABI files
+func EthCompileContracts(contracts BridgeContracts) error {
 	for _, contract := range contracts {
 		// Construct generic BIN/ABI generation cmd with contract's directory path and name
 		baseDirectory := ""
 		if contract.String() == BridgeBank.String() {
 			baseDirectory = contract.String() + "/"
 		}
-		dirABIBINGenCmd := strings.Replace(BaseABIBINGenCmdEthereum, DirectoryText, baseDirectory, -1)
+		dirABIBINGenCmd := strings.Replace(EthBaseABIBINGenCmd, DirectoryText, baseDirectory, -1)
 		contractABIBINGenCmd := strings.Replace(dirABIBINGenCmd, ContractText, contract.String(), -1)
 
 		// Segment BIN and ABI generation cmds
@@ -73,15 +73,15 @@ func CompileEthereumContracts(contracts BridgeContracts) error {
 	return nil
 }
 
-// CompileHarmonyContracts compiles contracts to BIN and ABI files
-func CompileHarmonyContracts(contracts BridgeContracts) error {
+// HmyCompileContracts compiles contracts to BIN and ABI files
+func HmyCompileContracts(contracts BridgeContracts) error {
 	for _, contract := range contracts {
 		// Construct generic BIN/ABI generation cmd with contract's directory path and name
 		baseDirectory := ""
 		if contract.String() == BridgeBank.String() {
 			baseDirectory = contract.String() + "/"
 		}
-		dirABIBINGenCmd := strings.Replace(BaseABIBINGenCmdHarmony, DirectoryText, baseDirectory, -1)
+		dirABIBINGenCmd := strings.Replace(HmyBaseABIBINGenCmd, DirectoryText, baseDirectory, -1)
 		contractABIBINGenCmd := strings.Replace(dirABIBINGenCmd, ContractText, contract.String(), -1)
 
 		// Segment BIN and ABI generation cmds
@@ -100,10 +100,10 @@ func CompileHarmonyContracts(contracts BridgeContracts) error {
 	return nil
 }
 
-// GenerateEthereumBindings generates bindings for each ethereum contract
-func GenerateEthereumBindings(contracts BridgeContracts) error {
+// EthGenerateBindings generates bindings for each ethereum contract
+func EthGenerateBindings(contracts BridgeContracts) error {
 	for _, contract := range contracts {
-		genBindingCmd := strings.Replace(BaseBindingGenCmdEthereum, ContractText, contract.String(), -1)
+		genBindingCmd := strings.Replace(EthBaseBindingGenCmd, ContractText, contract.String(), -1)
 		err := execCmd(genBindingCmd)
 		if err != nil {
 			return err
@@ -112,10 +112,10 @@ func GenerateEthereumBindings(contracts BridgeContracts) error {
 	return nil
 }
 
-// GenerateHarmonyBindings generates bindings for each ethereum contract
-func GenerateHarmonyBindings(contracts BridgeContracts) error {
+// HmyGenerateBindings generates bindings for each ethereum contract
+func HmyGenerateBindings(contracts BridgeContracts) error {
 	for _, contract := range contracts {
-		genBindingCmd := strings.Replace(BaseBindingGenCmdHarmony, ContractText, contract.String(), -1)
+		genBindingCmd := strings.Replace(HmyBaseBindingGenCmd, ContractText, contract.String(), -1)
 		err := execCmd(genBindingCmd)
 		if err != nil {
 			return err

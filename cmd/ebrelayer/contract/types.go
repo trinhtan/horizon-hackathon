@@ -29,8 +29,8 @@ func (d BridgeContract) String() string {
 // BridgeContracts is a slice of BridgeContract
 type BridgeContracts []BridgeContract
 
-// LoadEthereumBridgeContracts loads populated slice of BridgeContract
-func LoadEthereumBridgeContracts() BridgeContracts {
+// EthLoadBridgeContracts loads populated slice of BridgeContract
+func EthLoadBridgeContracts() BridgeContracts {
 	return BridgeContracts{
 		BridgeRegistry,
 		Valset,
@@ -40,8 +40,8 @@ func LoadEthereumBridgeContracts() BridgeContracts {
 	}
 }
 
-// LoadHarmonyBridgeContracts loads populated slice of BridgeContract
-func LoadHarmonyBridgeContracts() BridgeContracts {
+// HmyLoadBridgeContracts loads populated slice of BridgeContract
+func HmyLoadBridgeContracts() BridgeContracts {
 	return BridgeContracts{
 		BridgeRegistry,
 		Valset,
