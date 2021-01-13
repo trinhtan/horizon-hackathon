@@ -4,7 +4,7 @@ import { getETHContractAddress } from 'utils/getETHContractAddress';
 const ERC20 = require('contracts/IERC20.json');
 const web3 = new Web3(window.ethereum);
 
-export const approve = async (walletAddress, tokenAddress, chainId) => {
+export const approve_Eth = async (walletAddress, tokenAddress, chainId) => {
   const contractEthAddress = getETHContractAddress(chainId);
   const erc20 = new web3.eth.Contract(ERC20.abi, tokenAddress);
   await erc20.methods.approve(contractEthAddress.bridgeBank, 10e20).send({ from: walletAddress });

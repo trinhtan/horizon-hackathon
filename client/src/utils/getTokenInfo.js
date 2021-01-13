@@ -5,11 +5,15 @@ import eth from 'assets/icons/eth.png';
 import one from 'assets/icons/one.png';
 import Web3 from 'web3';
 import { getETHContractAddress } from 'utils/getETHContractAddress';
+import { getHmyContractAddress } from 'utils/getHmyContractAddress';
 import { Harmony } from '@harmony-js/core';
-import { ChainID, ChainType } from '@harmony-js/utils';
+import { ChainID, ChainType, fromWei, hexToNumber, Units } from '@harmony-js/utils';
 const ERC20 = require('contracts/IERC20.json');
 const { Client } = require('@bandprotocol/bandchain.js');
-
+const options = {
+  gasLimit: 6721900,
+  gasPrice: 1000000000
+};
 const hmy = new Harmony('https://api.s0.b.hmny.io', {
   chainType: ChainType.Harmony,
   chainId: ChainID.HmyTestnet
@@ -26,7 +30,7 @@ const tokenInfo = {
     {
       symbol: 'KNC',
       ethAddress: '0x3F80c39c0b96A0945f9F0E9f55d8A8891c5671A8',
-      hmyAddress: 'one1del50xpzdsfug7hfu0mmyfmdfnv8v0w804txay',
+      hmyAddress: 'one1uz230xxr88yrhs709fc865yunlf72prrefcm29',
       icon: knc
     },
     {
@@ -43,7 +47,7 @@ const tokenInfo = {
     },
     {
       symbol: 'ONE',
-      ethAddress: '0x96b79140D5092eBe7Da50c33990156825ccb6137',
+      ethAddress: '0x503bE5F89B1d0342880D983724bD2e3E9a827904',
       hmyAddress: '0x0000000000000000000000000000000000000001',
       icon: one
     }
@@ -75,6 +79,7 @@ export const getAddressToken = (_chainId, _symbol) => {
 export const getHmyAddressToken = (_chainId, _symbol) => {
   let address = '';
   let listToken = tokenInfo[_chainId] ? tokenInfo[_chainId] : [];
+  console.log('list', listToken);
   listToken.forEach(token => {
     if (token.symbol === _symbol) {
       address = token.hmyAddress;
@@ -108,15 +113,23 @@ export const convertToken = async (src, target, amount) => {
 // chain: 0: ETH 1: Harmony
 export const balanceOf = async (tokenAddress, walletAddress, roadSwap) => {
   let web3 = new Web3(window.ethereum);
-  if (roadSwap) {
-    web3 = hmy;
-  }
   let balance;
-  if (tokenAddress === '0x0000000000000000000000000000000000000001') {
-    balance = web3.eth.getBalance(walletAddress);
+  if (roadSwap) {
+    if (tokenAddress === '0x0000000000000000000000000000000000000001') {
+      balance = await hmy.blockchain.getBalance({ address: walletAddress });
+      balance = parseInt(balance.result);
+    } else {
+      const erc20 = hmy.contracts.createContract(ERC20.abi, tokenAddress);
+      balance = await erc20.methods.balanceOf(walletAddress).call(options);
+      balance = parseInt(balance);
+    }
   } else {
-    const erc20 = new web3.eth.Contract(ERC20.abi, tokenAddress);
-    balance = await erc20.methods.balanceOf(walletAddress).call();
+    if (tokenAddress === '0x0000000000000000000000000000000000000001') {
+      balance = web3.eth.getBalance(walletAddress);
+    } else {
+      const erc20 = new web3.eth.Contract(ERC20.abi, tokenAddress);
+      balance = await erc20.methods.balanceOf(walletAddress).call();
+    }
   }
   return balance;
 };
@@ -124,16 +137,24 @@ export const balanceOf = async (tokenAddress, walletAddress, roadSwap) => {
 // chain: 0: ETH 1: Harmony
 export const allowance = async (tokenAddress, walletAddress, chainId, roadSwap) => {
   let web3 = new Web3(window.ethereum);
-  if (roadSwap) {
-    web3 = hmy;
-  }
+  let erc20;
   let tokenAllowance = 0;
-  if (tokenAddress !== '0x0000000000000000000000000000000000000001') {
-    const erc20 = new web3.eth.Contract(ERC20.abi, tokenAddress);
-    let contractAddress = getETHContractAddress(chainId);
-    tokenAllowance = await erc20.methods
-      .allowance(walletAddress, contractAddress.bridgeBank)
-      .call();
+  if (roadSwap) {
+    if (tokenAddress !== '0x0000000000000000000000000000000000000001') {
+      erc20 = hmy.contracts.createContract(ERC20.abi, tokenAddress);
+      let contractAddress = getHmyContractAddress(chainId);
+      tokenAllowance = await erc20.methods
+        .allowance(walletAddress, contractAddress.bridgeBank)
+        .call(options);
+    }
+  } else {
+    if (tokenAddress !== '0x0000000000000000000000000000000000000001') {
+      erc20 = new web3.eth.Contract(ERC20.abi, tokenAddress);
+      let contractAddress = getETHContractAddress(chainId);
+      tokenAllowance = await erc20.methods
+        .allowance(walletAddress, contractAddress.bridgeBank)
+        .call();
+    }
   }
   return tokenAllowance;
 };
