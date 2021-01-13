@@ -84,7 +84,7 @@ contract HarmonyBridge is VersionedInitializable {
         address _token,
         uint256 _amount
     ) public isActive {
-
+        require(_amount > 0, "Amount token must be greater than zero");
         require(
             valset.isActiveValidator(msg.sender),
             "Must be an active validator"

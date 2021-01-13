@@ -26,8 +26,8 @@ const (
 	HarmonyBridgeRegistryABI = "/generated/harmony/abi/BridgeRegistry/BridgeRegistry.abi"
 )
 
-// LoadEthereumABI loads a smart contract as an abi.ABI
-func LoadEthereumABI(contractType txs.ContractRegistry) abi.ABI {
+// EthoadABI loads a smart contract as an abi.ABI
+func EthLoadABI(contractType txs.ContractRegistry) abi.ABI {
 	var (
 		_, b, _, _ = runtime.Caller(0)
 		dir        = filepath.Dir(b)
@@ -58,7 +58,7 @@ func LoadEthereumABI(contractType txs.ContractRegistry) abi.ABI {
 }
 
 // LoadHarmonyABI loads a smart contract as an abi.ABI
-func LoadHarmonyABI(contractType txs.ContractRegistry) abi.ABI {
+func HmyLoadABI(contractType txs.ContractRegistry) abi.ABI {
 	var (
 		_, b, _, _ = runtime.Caller(0)
 		dir        = filepath.Dir(b)

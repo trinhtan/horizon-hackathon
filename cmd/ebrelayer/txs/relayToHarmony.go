@@ -19,7 +19,7 @@ import (
 func RelayUnlockClaimToHarmony(harmonyProvider string, ethereumBridgeRegistry common.Address, event types.Event,
 	claim HmyUnlockClaim, privateKey *ecdsa.PrivateKey) error {
 	// Initialize client service, validator's tx auth, and target contract address
-	client, auth, target := initHarmonyRelayConfig(harmonyProvider, ethereumBridgeRegistry, event, privateKey)
+	client, auth, target := HmyInitRelayConfig(harmonyProvider, ethereumBridgeRegistry, event, privateKey)
 
 	// Initialize EthereumBridge instance
 	fmt.Println("\nFetching EthereumBridge contract...")
@@ -43,7 +43,7 @@ func RelayUnlockClaimToHarmony(harmonyProvider string, ethereumBridgeRegistry co
 func RelayOracleClaimToHarmony(provider string, contractAddress common.Address, event types.Event,
 	claim HmyOracleClaim, privateKey *ecdsa.PrivateKey) error {
 	// Initialize client service, validator's tx auth, and target contract address
-	client, auth, target := initHarmonyRelayConfig(provider, contractAddress, event, privateKey)
+	client, auth, target := HmyInitRelayConfig(provider, contractAddress, event, privateKey)
 
 	// Initialize Oracle instance
 	fmt.Println("\nFetching Oracle contract...")
@@ -62,8 +62,8 @@ func RelayOracleClaimToHarmony(provider string, contractAddress common.Address, 
 	return nil
 }
 
-// initHarmonyRelayConfig set up Ethereum client, validator's transaction auth, and the target contract's address
-func initHarmonyRelayConfig(provider string, registry common.Address, event types.Event, privateKey *ecdsa.PrivateKey,
+// HmyInitRelayConfig set up Ethereum client, validator's transaction auth, and the target contract's address
+func HmyInitRelayConfig(provider string, registry common.Address, event types.Event, privateKey *ecdsa.PrivateKey,
 ) (*hmyclient.Client, *bind.TransactOpts, common.Address) {
 	// Start Ethereum client
 	client, err := hmyclient.Dial(provider)
@@ -72,7 +72,7 @@ func initHarmonyRelayConfig(provider string, registry common.Address, event type
 	}
 
 	// Load the validator's address
-	sender, err := LoadSender()
+	sender, err := LoadSender(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func initHarmonyRelayConfig(provider string, registry common.Address, event type
 	}
 
 	// Get the specific contract's address
-	target, err := HmyGetAddressFromBridgeRegistry(client, registry, targetContract)
+	target, err := HmyGetAddressFromBridgeRegistry(privateKey, client, registry, targetContract)
 	if err != nil {
 		log.Fatal(err)
 	}

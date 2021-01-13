@@ -22,8 +22,8 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-// LoadPrivateKey loads the validator's private key from environment variables
-func LoadPrivateKey() (key *ecdsa.PrivateKey, err error) {
+// LoadEthereumPrivateKey loads the validator's private key from environment variables
+func LoadEthereumPrivateKey() (key *ecdsa.PrivateKey, err error) {
 	// Load config file containing environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file", err)
@@ -44,14 +44,32 @@ func LoadPrivateKey() (key *ecdsa.PrivateKey, err error) {
 	return privateKey, nil
 }
 
-// LoadSender uses the validator's private key to load the validator's address
-func LoadSender() (address common.Address, err error) {
-	key, err := LoadPrivateKey()
+// LoadHarmonyPrivateKey loads the validator's private key from environment variables
+func LoadHarmonyPrivateKey() (key *ecdsa.PrivateKey, err error) {
+	// Load config file containing environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file", err)
+	}
+
+	// Private key for validator's Ethereum address must be set as an environment variable
+	rawPrivateKey := os.Getenv("HARMONY_PRIVATE_KEY")
+	if strings.TrimSpace(rawPrivateKey) == "" {
+		log.Fatal("Error loading HARMONY_PRIVATE_KEY from .env file")
+	}
+
+	// Parse private key
+	privateKey, err := crypto.HexToECDSA(rawPrivateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	publicKey := key.Public()
+	return privateKey, nil
+}
+
+// LoadSender uses the validator's private key to load the validator's address
+func LoadSender(privateKey *ecdsa.PrivateKey) (address common.Address, err error) {
+
+	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
 		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")

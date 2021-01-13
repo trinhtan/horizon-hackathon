@@ -11,8 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	// harmonybind "github.com/harmony-one/harmony/accounts/abi/bind"
-
 	harmonybridge "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/ethereum/bindings/harmonybridge"
 	oracle "github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/contract/generated/ethereum/bindings/oracle"
 	"github.com/trinhtan/horizon-hackathon/cmd/ebrelayer/types"
@@ -27,7 +25,7 @@ const (
 func RelayUnlockClaimToEthereum(ethereumProvider string, ethereumBridgeRegistry common.Address, event types.Event,
 	claim EthUnlockClaim, privateKey *ecdsa.PrivateKey) error {
 	// Initialize client service, validator's tx auth, and target contract address
-	client, auth, target := initEthereumRelayConfig(ethereumProvider, ethereumBridgeRegistry, event, privateKey)
+	client, auth, target := EthInitRelayConfig(ethereumProvider, ethereumBridgeRegistry, event, privateKey)
 
 	// Initialize HarmonyBridge instance
 	fmt.Println("\nFetching HarmonyBridge contract...")
@@ -52,7 +50,7 @@ func RelayUnlockClaimToEthereum(ethereumProvider string, ethereumBridgeRegistry 
 func RelayOracleClaimToEthereum(provider string, contractAddress common.Address, event types.Event,
 	claim EthOracleClaim, privateKey *ecdsa.PrivateKey) error {
 	// Initialize client service, validator's tx auth, and target contract address
-	client, auth, target := initEthereumRelayConfig(provider, contractAddress, event, privateKey)
+	client, auth, target := EthInitRelayConfig(provider, contractAddress, event, privateKey)
 
 	// Initialize Oracle instance
 	fmt.Println("\nFetching Oracle contract...")
@@ -71,8 +69,8 @@ func RelayOracleClaimToEthereum(provider string, contractAddress common.Address,
 	return nil
 }
 
-// initEthereumRelayConfig set up Ethereum client, validator's transaction auth, and the target contract's address
-func initEthereumRelayConfig(provider string, registry common.Address, event types.Event, privateKey *ecdsa.PrivateKey,
+// EthInitRelayConfig set up Ethereum client, validator's transaction auth, and the target contract's address
+func EthInitRelayConfig(provider string, registry common.Address, event types.Event, privateKey *ecdsa.PrivateKey,
 ) (*ethclient.Client, *bind.TransactOpts, common.Address) {
 	// Start Ethereum client
 	client, err := ethclient.Dial(provider)
@@ -81,7 +79,7 @@ func initEthereumRelayConfig(provider string, registry common.Address, event typ
 	}
 
 	// Load the validator's address
-	sender, err := LoadSender()
+	sender, err := LoadSender(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -116,7 +114,7 @@ func initEthereumRelayConfig(provider string, registry common.Address, event typ
 	}
 
 	// Get the specific contract's address
-	target, err := EthGetAddressFromBridgeRegistry(client, registry, targetContract)
+	target, err := EthGetAddressFromBridgeRegistry(privateKey, client, registry, targetContract)
 	if err != nil {
 		log.Fatal(err)
 	}

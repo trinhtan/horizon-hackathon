@@ -2,6 +2,7 @@ package txs
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"log"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -40,9 +41,9 @@ func (d ContractRegistry) String() string {
 }
 
 // EthGetAddressFromBridgeRegistry queries the requested contract address from the BridgeRegistry contract
-func EthGetAddressFromBridgeRegistry(client *ethclient.Client, registry common.Address, target ContractRegistry,
+func EthGetAddressFromBridgeRegistry(privateKey *ecdsa.PrivateKey, client *ethclient.Client, registry common.Address, target ContractRegistry,
 ) (common.Address, error) {
-	sender, err := LoadSender()
+	sender, err := LoadSender(privateKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -88,9 +89,9 @@ func EthGetAddressFromBridgeRegistry(client *ethclient.Client, registry common.A
 }
 
 // HmyGetAddressFromBridgeRegistry queries the requested contract address from the BridgeRegistry contract
-func HmyGetAddressFromBridgeRegistry(client *hmyclient.Client, registry common.Address, target ContractRegistry,
+func HmyGetAddressFromBridgeRegistry(privateKey *ecdsa.PrivateKey, client *hmyclient.Client, registry common.Address, target ContractRegistry,
 ) (common.Address, error) {
-	// sender, err := LoadSender()
+	// sender, err := LoadSender(privateKey)
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
@@ -131,10 +132,6 @@ func HmyGetAddressFromBridgeRegistry(client *hmyclient.Client, registry common.A
 	default:
 		panic("invalid target contract address")
 	}
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 
 	return address, nil
 }

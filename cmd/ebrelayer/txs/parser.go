@@ -67,8 +67,8 @@ func isZeroAddress(address common.Address) bool {
 	return address == common.HexToAddress(nullAddress)
 }
 
-// HarmonyEventToEthereumBridgeClaim parses and packages an Ethereum event struct with a validator address in an EthBridgeClaim msg
-func HarmonyEventToEthereumBridgeClaim(event *types.HmyLogLockEvent) (EthUnlockClaim, error) {
+// HarmonyEventToEthereumClaim parses and packages an Ethereum event struct with a validator address in an EthBridgeClaim msg
+func HarmonyEventToEthereumClaim(event *types.HmyLogLockEvent) (EthUnlockClaim, error) {
 	witnessClaim := EthUnlockClaim{}
 
 	// chainID type casting (*big.Int -> int)
@@ -96,8 +96,8 @@ func HarmonyEventToEthereumBridgeClaim(event *types.HmyLogLockEvent) (EthUnlockC
 	return witnessClaim, nil
 }
 
-// EthereumEventToHarmonyBridgeClaim parses and packages an Ethereum event struct with a validator address in an EthBridgeClaim msg
-func EthereumEventToHarmonyBridgeClaim(event *types.EthLogLockEvent) (HmyUnlockClaim, error) {
+// EthereumEventToHarmonyClaim parses and packages an Ethereum event struct with a validator address in an EthBridgeClaim msg
+func EthereumEventToHarmonyClaim(event *types.EthLogLockEvent) (HmyUnlockClaim, error) {
 	witnessClaim := HmyUnlockClaim{}
 
 	// chainID type casting (*big.Int -> int)
