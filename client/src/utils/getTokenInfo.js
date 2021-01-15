@@ -42,7 +42,7 @@ const tokenInfo = {
     {
       symbol: 'ETH',
       ethAddress: '0x0000000000000000000000000000000000000001',
-      hmyAddress: 'one1z7aajzsmm5jj26q87p4f6q80f93xvzc3w9289f',
+      hmyAddress: 'one16vxu2p4v7qf65nkeclll974ckvv0rjcyv3lc8a',
       icon: eth
     },
     {
@@ -79,7 +79,6 @@ export const getAddressToken = (_chainId, _symbol) => {
 export const getHmyAddressToken = (_chainId, _symbol) => {
   let address = '';
   let listToken = tokenInfo[_chainId] ? tokenInfo[_chainId] : [];
-  console.log('list', listToken);
   listToken.forEach(token => {
     if (token.symbol === _symbol) {
       address = token.hmyAddress;
@@ -114,6 +113,9 @@ export const convertToken = async (src, target, amount) => {
 export const balanceOf = async (tokenAddress, walletAddress, roadSwap) => {
   let web3 = new Web3(window.ethereum);
   let balance;
+  if (!walletAddress) {
+    return 0;
+  }
   if (roadSwap) {
     if (tokenAddress === '0x0000000000000000000000000000000000000001') {
       balance = await hmy.blockchain.getBalance({ address: walletAddress });
@@ -139,6 +141,9 @@ export const allowance = async (tokenAddress, walletAddress, chainId, roadSwap) 
   let web3 = new Web3(window.ethereum);
   let erc20;
   let tokenAllowance = 0;
+  if (!walletAddress) {
+    return 0;
+  }
   if (roadSwap) {
     if (tokenAddress !== '0x0000000000000000000000000000000000000001') {
       erc20 = hmy.contracts.createContract(ERC20.abi, tokenAddress);
@@ -146,6 +151,7 @@ export const allowance = async (tokenAddress, walletAddress, chainId, roadSwap) 
       tokenAllowance = await erc20.methods
         .allowance(walletAddress, contractAddress.bridgeBank)
         .call(options);
+      tokenAllowance = parseInt(tokenAllowance);
     }
   } else {
     if (tokenAddress !== '0x0000000000000000000000000000000000000001') {

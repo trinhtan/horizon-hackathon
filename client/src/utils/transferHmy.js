@@ -2,7 +2,6 @@ import { Harmony } from '@harmony-js/core';
 import { ChainID, ChainType, Unit } from '@harmony-js/utils';
 import BridgeBankHmy from 'contracts/BridgeBankHmy.json';
 import { getHmyContractAddress } from 'utils/getHmyContractAddress';
-import Web3 from 'web3';
 
 const ERC20 = require('contracts/IERC20.json');
 

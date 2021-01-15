@@ -1,6 +1,5 @@
 import { Harmony } from '@harmony-js/core';
 import { ChainID, ChainType } from '@harmony-js/utils';
-import BridgeBankHmy from 'contracts/BridgeBankHmy.json';
 import WalletConnectProvider from '@walletconnect/web3-provider';
 
 const provider = new WalletConnectProvider({
