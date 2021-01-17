@@ -10,6 +10,7 @@
 <image src='./readme-images/band-logo.png'  width='10%'/>
 <image src='./readme-images/harmony.png'  width='35%'/>
 </div>
+
 ## Introduction
 
 Lending Swap is an application used to swap atoms between tokens, native tokens from Ethereum to Harmony and vice versa.
