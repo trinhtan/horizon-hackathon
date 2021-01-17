@@ -23,7 +23,7 @@ In order to be able to transfer the equivalent value of tokens, for example **ET
 
 - Ethereum -> Harmony
 
-<image src='./readme-images/ethTohmy.png' />
+<image src='./readme-images/ethtohmy.png' />
 
 - Harmony -> Ethereum
 
