@@ -2,11 +2,14 @@
 <p>
   <img src="https://img.shields.io/badge/version-1.0-blue.svg?cacheSeconds=2592000" />
 </p>
+<div float: left;
+  width: 33.33%;
+  padding: 5px;>
 <image src='./readme-images/Ethereum-icon.png'  width='10%'/>
 <image src='./readme-images/aave.png'  width='10%'/>
 <image src='./readme-images/band-logo.png'  width='10%'/>
 <image src='./readme-images/harmony.png'  width='35%'/>
-
+</div>
 ## Introduction
 
 Lending Swap is an application used to swap atoms between tokens, native tokens from Ethereum to Harmony and vice versa.
