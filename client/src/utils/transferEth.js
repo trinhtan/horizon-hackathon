@@ -1,45 +1,63 @@
 import Web3 from 'web3';
 import BridgeBank from 'contracts/BridgeBank.json';
 import { getETHContractAddress } from 'utils/getETHContractAddress';
+import { ChainID, ChainType } from '@harmony-js/utils';
+import { Harmony } from '@harmony-js/core';
 const ERC20 = require('contracts/IERC20.json');
 const web3 = new Web3(window.ethereum);
+
+const hmy = new Harmony('https://api.s0.b.hmny.io', {
+  chainType: ChainType.Harmony,
+  chainId: ChainID.HmyTestnet
+});
 
 export const approve_Eth = async (walletAddress, tokenAddress, chainId) => {
   const contractEthAddress = getETHContractAddress(chainId);
   const erc20 = new web3.eth.Contract(ERC20.abi, tokenAddress);
-  await erc20.methods.approve(contractEthAddress.bridgeBank, 10e20).send({ from: walletAddress });
+  const weiValue = web3.utils.toWei('1000000000', 'ether');
+  await erc20.methods
+    .approve(contractEthAddress.bridgeBank, weiValue)
+    .send({ from: walletAddress });
 };
 
 export const swapToken_1_1 = async (walletAddress, receiver, tokenAddress, amount, chainId) => {
   const contractAddress = getETHContractAddress(chainId);
   const bridgeBank = new web3.eth.Contract(BridgeBank.abi, contractAddress.bridgeBank);
+  let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
+  const weiValue = web3.utils.toWei(amount, 'ether');
   await bridgeBank.methods
-    .swapToken_1_1(receiver, tokenAddress, amount)
+    .swapToken_1_1(receiver_hmy, tokenAddress, weiValue)
     .send({ from: walletAddress });
 };
 
 export const swapETHForONE = async (walletAddress, receiver, amount, chainId) => {
   const contractAddress = getETHContractAddress(chainId);
   const bridgeBank = new web3.eth.Contract(BridgeBank.abi, contractAddress.bridgeBank);
+  let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
+  const weiValue = web3.utils.toWei(amount, 'ether');
   await bridgeBank.methods
-    .swapToken_1_1(receiver, amount)
-    .send({ value: amount, from: walletAddress });
+    .swapToken_1_1(receiver_hmy, weiValue)
+    .send({ value: weiValue, from: walletAddress });
 };
 
 export const swapETHForWETH = async (walletAddress, receiver, amount, chainId) => {
   const contractAddress = getETHContractAddress(chainId);
   const bridgeBank = new web3.eth.Contract(BridgeBank.abi, contractAddress.bridgeBank);
+  let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
+  const weiValue = web3.utils.toWei(amount, 'ether');
   await bridgeBank.methods
-    .swapETHForWETH(receiver, amount)
-    .send({ value: amount, from: walletAddress });
+    .swapETHForWrappedETH(receiver_hmy, weiValue)
+    .send({ value: weiValue, from: walletAddress });
 };
 
 export const swapETHForToken = async (walletAddress, receiver, amount, destToken, chainId) => {
   const contractAddress = getETHContractAddress(chainId);
   const bridgeBank = new web3.eth.Contract(BridgeBank.abi, contractAddress.bridgeBank);
+  let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
+  const weiValue = web3.utils.toWei(amount, 'ether');
   await bridgeBank.methods
-    .swapETHForToken(receiver, amount, destToken)
-    .send({ value: amount, from: walletAddress });
+    .swapETHForToken(receiver_hmy, weiValue, destToken)
+    .send({ value: weiValue, from: walletAddress });
 };
 export const swapTokenForToken = async (
   walletAddress,
@@ -51,21 +69,28 @@ export const swapTokenForToken = async (
 ) => {
   const contractAddress = getETHContractAddress(chainId);
   const bridgeBank = new web3.eth.Contract(BridgeBank.abi, contractAddress.bridgeBank);
+  let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
+  const weiValue = web3.utils.toWei(amount, 'ether');
   await bridgeBank.methods
-    .swapTokenForToken(receiver, ethToken, amount, destToken)
+    .swapTokenForToken(receiver_hmy, ethToken, weiValue, destToken)
     .send({ from: walletAddress });
 };
 export const swapTokenForWETH = async (walletAddress, receiver, ethToken, amount, chainId) => {
   const contractAddress = getETHContractAddress(chainId);
   const bridgeBank = new web3.eth.Contract(BridgeBank.abi, contractAddress.bridgeBank);
+  let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
+  const weiValue = web3.utils.toWei(amount, 'ether');
+  console.log('wei', weiValue);
   await bridgeBank.methods
-    .swapTokenForWETH(receiver, ethToken, amount)
+    .swapTokenForWrappedETH(receiver_hmy, ethToken, weiValue)
     .send({ from: walletAddress });
 };
 export const swapTokenForONE = async (walletAddress, receiver, ethToken, amount, chainId) => {
   const contractAddress = getETHContractAddress(chainId);
   const bridgeBank = new web3.eth.Contract(BridgeBank.abi, contractAddress.bridgeBank);
+  let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
+  const weiValue = web3.utils.toWei(amount, 'ether');
   await bridgeBank.methods
-    .swapTokenForONE(receiver, ethToken, amount)
+    .swapTokenForONE(receiver_hmy, ethToken, weiValue)
     .send({ from: walletAddress });
 };

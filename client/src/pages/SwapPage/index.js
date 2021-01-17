@@ -68,7 +68,7 @@ function SwapPage() {
   const [walletDest, setWalletDest] = useState('ONE');
   const [addressDest, setAddressDest] = useState();
   const [toAddress, setToAddress] = useState();
-  const [approvedToken, setApprovedToken] = useState(false);
+  const [approvedToken, setApprovedToken] = useState(true);
   const [balanceSource, setBalanceSource] = useState(0);
   useInterval(async () => {
     if (tokenSource !== tokenDest) {
@@ -77,33 +77,44 @@ function SwapPage() {
     } else {
       setAmoutDest(amountSource);
     }
-  }, 1000);
+    // checkBeforeSwap();
+  }, 3000);
 
   useEffect(() => {
     setAddressDest(listAddressDest[indexRoadSwap]);
     setToAddress(listAddressDest[indexRoadSwap]);
-  }, [listAddressDest, indexRoadSwap, addressDest]);
+    calcBalance(tokenSource);
+    checkBeforeSwap();
+  }, [listAddressDest, indexRoadSwap, addressDest, tokenDest, tokenSource, amountSource]);
 
   function reverseDirectionToken() {
     setTokenSource(tokenDest);
     setTokenDest(tokenSource);
   }
 
-  async function onChangeTokenSource(value) {
-    let tokenAddress = getAddressToken(ethChainId, value);
-    let allowanceToken;
+  async function calcBalance(tokenSymbol) {
+    let tokenAddress = getAddressToken(ethChainId, tokenSymbol);
     let balanceToken;
+    if (tokenSource !== tokenDest) {
+      let amountDest = await convertToken(tokenSource, tokenDest, amountSource);
+      setAmoutDest(amountDest);
+    } else {
+      setAmoutDest(amountSource);
+    }
     if (indexRoadSwap) {
       // Harmony -> ETH
-      tokenAddress = getHmyAddressToken(ethChainId, value);
+      tokenAddress = getHmyAddressToken(ethChainId, tokenSymbol);
       balanceToken = await balanceOf(tokenAddress, addressHmy, indexRoadSwap);
       setBalanceSource(balanceToken);
     } else {
       // ETH -> Harmony
-      tokenAddress = getAddressToken(ethChainId, value);
+      tokenAddress = getAddressToken(ethChainId, tokenSymbol);
       balanceToken = await balanceOf(tokenAddress, addressETH, indexRoadSwap);
-      allowanceToken = await allowance(tokenAddress, addressETH, ethChainId, indexRoadSwap);
+      setBalanceSource(balanceToken);
     }
+  }
+
+  async function onChangeTokenSource(value) {
     setTokenSource(value);
   }
 
@@ -150,32 +161,55 @@ function SwapPage() {
     setToAddress(addressDest);
   }
 
+  async function approveToken() {
+    let tokenAddress;
+    if (indexRoadSwap) {
+      tokenAddress = getHmyAddressToken(ethChainId, tokenSource);
+      await approveHmy(addressHmy, tokenAddress, hmyChainId);
+    } else {
+      tokenAddress = getAddressToken(ethChainId, tokenSource);
+      await approve_Eth(addressETH, tokenAddress, ethChainId);
+    }
+    await checkBeforeSwap();
+  }
+
   async function checkBeforeSwap() {
     let tokenAddress;
     let balanceToken;
     let allowanceToken;
+    console.log('checbefore', indexRoadSwap);
     if (indexRoadSwap) {
       // Harmony -> ETH
       tokenAddress = getHmyAddressToken(ethChainId, tokenSource);
       balanceToken = await balanceOf(tokenAddress, addressHmy, indexRoadSwap);
       allowanceToken = await allowance(tokenAddress, addressHmy, hmyChainId, indexRoadSwap);
-      if (allowanceToken < amountSource && tokenSource !== 'ONE') {
-        alert('You must approve token');
-        try {
-          await approveHmy(addressHmy, tokenAddress, hmyChainId);
-        } catch (e) {
-          console.log(e);
-        }
-      } else if (balanceToken < amountSource) {
-        alert('Balance exceeded!');
+      if (
+        parseFloat(allowanceToken) < parseFloat(amountSource) * 10 ** 18 &&
+        tokenSource !== 'ONE'
+      ) {
+        setApprovedToken(false);
+      } else if (balanceToken < amountSource * 10 ** 18) {
+        setDisableBtnSwap(true);
       } else {
-        await swap();
+        setApprovedToken(true);
+        setDisableBtnSwap(false);
       }
     } else {
       // ETH -> Harmony
       tokenAddress = getAddressToken(ethChainId, tokenSource);
       balanceToken = await balanceOf(tokenAddress, addressETH, indexRoadSwap);
       allowanceToken = await allowance(tokenAddress, addressETH, ethChainId, indexRoadSwap);
+      if (
+        parseFloat(allowanceToken) < parseFloat(amountSource) * 10 ** 18 &&
+        tokenSource !== 'ETH'
+      ) {
+        setApprovedToken(false);
+      } else if (balanceToken < amountSource * 10 ** 18) {
+        setDisableBtnSwap(true);
+      } else {
+        setApprovedToken(true);
+        setDisableBtnSwap(false);
+      }
     }
   }
 
@@ -222,7 +256,7 @@ function SwapPage() {
         } else if (tokenDest === 'ONE') {
           await swapETHForONE(addressETH, addressHmy, amountSource, ethChainId);
         } else {
-          let addressDest = getHmyAddressToken(hmyChainId, tokenDest);
+          let addressDest = getHmyAddressToken(ethChainId, tokenDest);
           await swapETHForToken(addressETH, addressHmy, amountSource, addressDest, ethChainId);
         }
       } else if (tokenSource === tokenDest) {
@@ -237,7 +271,7 @@ function SwapPage() {
           await swapTokenForWETH(addressETH, addressHmy, addressSource, amountSource, ethChainId);
         } else {
           let addressSource = getHmyAddressToken(ethChainId, tokenSource);
-          let addressDest = getAddressToken(hmyChainId, tokenDest);
+          let addressDest = getAddressToken(ethChainId, tokenDest);
           await swapTokenForToken(
             addressETH,
             addressHmy,
@@ -365,18 +399,33 @@ function SwapPage() {
                   </div>
                 ) : null}
               </div>
-              <div className='button-swap'>
-                <button
-                  disabled={disableBtnSwap}
-                  id='swap-button'
-                  className='swap-button'
-                  onClick={() => checkBeforeSwap()}
-                >
-                  <div className='css-10ob8xa'>
-                    <SwapOutlined /> Swap Anyway
-                  </div>
-                </button>
-              </div>
+              {approvedToken ? (
+                <div className='button-swap'>
+                  <button
+                    disabled={disableBtnSwap}
+                    id='swap-button'
+                    className='swap-button'
+                    onClick={() => swap()}
+                  >
+                    <div className='css-10ob8xa'>
+                      <SwapOutlined /> Swap Anyway
+                    </div>
+                  </button>
+                </div>
+              ) : (
+                <div className='button-swap'>
+                  <button
+                    disabled={disableBtnSwap}
+                    id='swap-button'
+                    className='swap-button'
+                    onClick={() => approveToken()}
+                  >
+                    <div className='css-10ob8xa'>
+                      <SwapOutlined /> Approve
+                    </div>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </Col>
