@@ -237,7 +237,7 @@ function SwapPage() {
           await swapTokenForWONE(addressHmy, addressETH, addressSource, amountSource, hmyChainId);
         } else {
           let addressSource = getHmyAddressToken(ethChainId, tokenSource);
-          let addressDest = getAddressToken(ethChainId, tokenDest);
+          let addressDest = getHmyAddressToken(ethChainId, tokenDest);
           await swapTokenForToken_hmy(
             addressHmy,
             addressETH,
@@ -256,7 +256,7 @@ function SwapPage() {
         } else if (tokenDest === 'ONE') {
           await swapETHForONE(addressETH, addressHmy, amountSource, ethChainId);
         } else {
-          let addressDest = getHmyAddressToken(ethChainId, tokenDest);
+          let addressDest = getAddressToken(ethChainId, tokenDest);
           await swapETHForToken(addressETH, addressHmy, amountSource, addressDest, ethChainId);
         }
       } else if (tokenSource === tokenDest) {
@@ -270,7 +270,7 @@ function SwapPage() {
           let addressSource = getAddressToken(ethChainId, tokenSource);
           await swapTokenForWETH(addressETH, addressHmy, addressSource, amountSource, ethChainId);
         } else {
-          let addressSource = getHmyAddressToken(ethChainId, tokenSource);
+          let addressSource = getAddressToken(ethChainId, tokenSource);
           let addressDest = getAddressToken(ethChainId, tokenDest);
           await swapTokenForToken(
             addressETH,
