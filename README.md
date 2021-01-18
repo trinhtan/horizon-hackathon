@@ -25,6 +25,10 @@ In order to be able to transfer the equivalent value of tokens, for example **ET
 <image src='./readme-images/harmony.png'  width='35%'/>
 </div>
 
+## Production :seedling:
+
+https://lendingswap.firebaseapp.com
+
 ## Usage
 
 ### **Ethereum -> Harmony**
@@ -98,7 +102,7 @@ There are 2 BridgeBank contracts on 2 sides that are responsible for receiving t
   - HarmonyBridge.sol
   - Valset.sol
 
-## In the next version
+## In the next version :herb:
 
 - Set up a consensus mechanism for validators to verify transactions when unlocking tokens. Validators will receive a reward from the interest received from lending pools when validating transactions
 
