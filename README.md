@@ -71,16 +71,17 @@ There are 2 BridgeBank contracts on 2 sides that are responsible for receiving t
 
 ### Frontend:
 
-<image src='./readme-images/react.png' width='50%'/>
-
+<p align="center">
+<image src='./readme-images/react.png' width='40%'/>
+<p>
 ### Oracle Protocol:
-
-<image src='./readme-images/band.png' width='50%' padding='20%'/>
-
+<p align="center">
+<image src='./readme-images/band.png' width='30%' padding='20%'/>
+</p>
 ### Lengding platform:
-
-<image src='./readme-images/aave_logo.jpg' width='50%'>
-
+<p align="center">
+<image src='./readme-images/aave_logo.jpg' width='30%'>
+</p>
 ### Smart contract:
 
 - Main contract in Harmony:
