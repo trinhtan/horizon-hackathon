@@ -87,6 +87,7 @@ func (sub EthereumSub) Start() {
 				os.Exit(1)
 			}
 			_, subBridgeBank = sub.EthStartContractEventSub(logs, client, txs.BridgeBank)
+			_, subHarmonyBridge = sub.EthStartContractEventSub(logs, client, txs.HarmonyBridge)
 		case err := <-subHarmonyBridge.Err():
 			sub.Logger.Error("Ethereum - Sub harmonyBridge error:", err.Error())
 			client, err = EthSetupWebsocketClient(sub.EthereumProvider)
@@ -94,6 +95,7 @@ func (sub EthereumSub) Start() {
 				sub.Logger.Error(err.Error())
 				os.Exit(1)
 			}
+			_, subBridgeBank = sub.EthStartContractEventSub(logs, client, txs.BridgeBank)
 			_, subHarmonyBridge = sub.EthStartContractEventSub(logs, client, txs.HarmonyBridge)
 		// vLog is raw event data
 		case vLog := <-logs:
