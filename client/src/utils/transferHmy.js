@@ -51,7 +51,10 @@ export const swapToken_1_1_hmy = async (walletAddress, receiver, tokenAddress, a
       }
     };
     let weiValue = new Unit(amount).asOne().toWei();
-    await bridgeBank.methods.swapToken_1_1(receiver, tokenAddress, weiValue).send({ ...options });
+    await bridgeBank.methods
+      .swapToken_1_1(receiver, tokenAddress, weiValue)
+      .send({ ...options })
+      .then(e => console.log(e));
   } catch (e) {
     console.log(e);
   }
