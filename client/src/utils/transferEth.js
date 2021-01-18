@@ -38,7 +38,7 @@ export const swapETHForONE = async (walletAddress, receiver, amount, chainId) =>
   let receiver_hmy = hmy.crypto.getAddress(receiver).checksum;
   const weiValue = web3.utils.toWei(amount, 'ether');
   await bridgeBank.methods
-    .swapToken_1_1(receiver_hmy, weiValue)
+    .swapETHForONE(receiver_hmy, weiValue)
     .send({ value: weiValue, from: walletAddress })
     .then(e => message.success(e.blockHash));
 };

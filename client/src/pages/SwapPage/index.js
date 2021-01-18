@@ -214,6 +214,7 @@ function SwapPage() {
   }
 
   const swap = async () => {
+    console.log('token', tokenSource, tokenDest);
     if (indexRoadSwap) {
       // Harmony -> ETH
       if (tokenSource === 'ONE') {
