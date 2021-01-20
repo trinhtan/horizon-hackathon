@@ -1,9 +1,10 @@
 <h1 align="center">Welcome to Lending Swap 👋</h1>
 <p align="center">
-<image src='./readme-images/logo.png' width='50%'>
+<image src='./readme-images/logo_animation.gif' width='100%'>
 </p>
 <p>
   <img src="https://img.shields.io/badge/version-1.0-blue.svg?cacheSeconds=2592000" />
+  
 </p>
 
 ## Introduction
